@@ -1,0 +1,51 @@
+﻿#
+# Digital Voice Modem - DFSI
+#
+# @package DVM / DFSI
+#
+
+# Time in seconds between pings to peers.
+pingTime: 5
+# Flag indicating whether or not the router should debug display all packets received.
+rawPacketTrace: false
+
+# Textual Name
+name: DFSI
+# Network Peer ID
+peerId: 9000123
+# Hostname/IP address of FNE master to connect to.
+address: 127.0.0.1
+# Port number to connect to.
+port: 62031
+# FNE access password.
+passphrase: RPT1234
+
+# Local DFSI RTP Port number.
+localRtpPort: 27500
+
+# Remote RFSS DFSI Hostname/IP address of FNE master to connect to.
+remoteDfsiAddress: 127.0.0.1
+# Remote DFSI Control Port number to connect to.
+remoteControlPort: 27000
+# Remote DFSI RTP Port number to connect to.
+remoteRtpPort: 27500
+
+#
+# Logging Configuration
+#   Logging Levels:
+#     1 - Debug
+#     2 - Message
+#     3 - Informational
+#     4 - Warning
+#     5 - Error
+#     6 - Fatal
+#
+log:
+    # Console display logging level (used when in foreground).
+    displayLevel: 1
+    # File logging level.
+    fileLevel: 1
+    # Full path for the directory to store the log files.
+    filePath: .
+    # Log filename prefix.
+    fileRoot: dvmdfsi
