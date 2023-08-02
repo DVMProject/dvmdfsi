@@ -94,6 +94,11 @@ namespace dvmdfsi
         /// <summary>
         /// 
         /// </summary>
+        public int DfsiHeartbeat = 5;
+
+        /// <summary>
+        /// 
+        /// </summary>
         public int LocalControlPort = 27000;
         /// <summary>
         /// 

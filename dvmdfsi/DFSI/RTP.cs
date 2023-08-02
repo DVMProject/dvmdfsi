@@ -146,6 +146,28 @@ namespace dvmdfsi.DFSI
         }
 
         /// <summary>
+        /// Helper to reset the master endpoint.
+        /// </summary>
+        /// <param name="port"></param>
+        public void ResetMasterEndpoint(ushort port)
+        {
+            if (port != Program.Configuration.RemoteRtpPort)
+                return;
+
+            // handle using address as IP or resolving from hostname to IP
+            try
+            {
+                masterEndpoint = new IPEndPoint(IPAddress.Parse(Program.Configuration.RemoteDfsiAddress), port);
+            }
+            catch (FormatException)
+            {
+                IPAddress[] addresses = Dns.GetHostAddresses(Program.Configuration.RemoteDfsiAddress);
+                if (addresses.Length > 0)
+                    masterEndpoint = new IPEndPoint(addresses[0], port);
+            }
+        }
+
+        /// <summary>
         /// Helper to send a raw UDP frame.
         /// </summary>
         /// <param name="frame">UDP frame to send</param>

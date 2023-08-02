@@ -32,6 +32,7 @@ using dvmdfsi.FNE;
 using dvmdfsi.FNE.DMR;
 
 using dvmdfsi.DFSI;
+using dvmdfsi.DFSI.FSC;
 
 namespace dvmdfsi
 {
@@ -278,7 +279,29 @@ namespace dvmdfsi
             if (!dfsiControl.IsStarted)
                 dfsiControl.Start();
 
-            // TODO -- implement DFSI FSC_CONNECT via control port
+            dfsiControl.ConnectResponse += DfsiControl_ConnectResponse;
+
+            ConnectDFSI();
+        }
+
+        /// <summary>
+        /// Helper to send FSC_CONNECT to remote DFSI RFSS.
+        /// </summary>
+        private void ConnectDFSI()
+        {
+            FSCConnect connect = new FSCConnect();
+            connect.VCBasePort = (ushort)Program.Configuration.LocalRtpPort;
+            connect.VCSSRC = (uint)Program.Configuration.PeerId;
+            dfsiControl.SendRemote(connect);
+        }
+
+        /// <summary>
+        /// DFSI control connect response handler.
+        /// </summary>
+        /// <param name="response"></param>
+        private void DfsiControl_ConnectResponse(FSCConnectResponse response)
+        {
+            dfsiRTP.ResetMasterEndpoint(response.VCBasePort);
 
             if (!dfsiRTP.IsStarted)
                 dfsiRTP.Start();
@@ -292,10 +315,11 @@ namespace dvmdfsi
             if (fne.IsStarted)
                 fne.Stop();
 
-            // TODO -- implement DFSI FSC_DISCONNECT via control port
-
             if (dfsiControl.IsStarted)
+            {
+                dfsiControl.SendRemote(new FSCDisconnect());
                 dfsiControl.Stop();
+            }
 
             if (dfsiRTP.IsStarted)
                 dfsiRTP.Stop();

@@ -20,6 +20,9 @@ port: 62031
 # FNE access password.
 passphrase: RPT1234
 
+# Time in seconds between heartbets to DFSI peers.
+dfsiHeartbeat: 5
+
 # Local DFSI RTP Port number.
 localRtpPort: 27500
 

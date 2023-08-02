@@ -33,13 +33,25 @@ using Serilog;
 
 using dvmdfsi.FNE;
 
+using dvmdfsi.DFSI.FSC;
+
 namespace dvmdfsi.DFSI
 {
+    /// <summary>
+    /// Callback used to signal a DFSI connection response.
+    /// </summary>
+    /// <param name="response"></param>
+    /// <returns>True, if the frame was handled, otherwise false.</returns>
+    public delegate void ControlConnectResponse(FSCConnectResponse response);
+
     /// <summary>
     /// Implements the DFSI control port interface.
     /// </summary>
     public class Control
     {
+        private const int MAX_MISSED_HB = 5;
+        private const int MAX_CONNECT_WAIT_CYCLES = 10;
+
         private static Random rand = null;
 
         private bool isStarted = false;
@@ -53,6 +65,11 @@ namespace dvmdfsi.DFSI
         private Task listenTask = null;
         private CancellationTokenSource maintainenceCancelToken = new CancellationTokenSource();
         private Task maintainenceTask = null;
+
+        private int cyclesSinceConnectReq = 0;
+        private bool reqConnectionToPeer = false;
+        private bool establishedConnection = false;
+        private DateTime lastPing;
 
         /*
         ** Properties
@@ -75,6 +92,15 @@ namespace dvmdfsi.DFSI
         /// Flag indicating whether this <see cref="Control"/> is running.
         /// </summary>
         public bool IsStarted => isStarted;
+
+        /*
+        ** Events/Callbacks
+        */
+
+        /// <summary>
+        /// Event action that signals a DFSI connection response.
+        /// </summary>
+        public event ControlConnectResponse ConnectResponse;
 
         /*
         ** Methods
@@ -148,6 +174,27 @@ namespace dvmdfsi.DFSI
             {
                 Endpoint = masterEndpoint,
                 Message = message
+            });
+        }
+
+        /// <summary>
+        /// Helper to send a FSC message to the DFSI remote.
+        /// </summary>
+        /// <param name="message">FSC message to send</param>
+        public void SendRemote(FSCMessage message)
+        {
+            byte[] buffer = null;
+            if (message.MessageId != MessageType.FSC_ACK)
+                buffer = new byte[message.Length];
+            else
+                buffer = new byte[message.Length + ((FSCACK)message).ResponseLength];
+
+            message.Encode(ref buffer);
+
+            Send(new UdpFrame()
+            {
+                Endpoint = masterEndpoint,
+                Message = buffer
             });
         }
 
@@ -234,7 +281,89 @@ namespace dvmdfsi.DFSI
                     if (frame.Message.Length <= 0)
                         continue;
 
-                    // TODO TODO TODO
+                    if (reqConnectionToPeer)
+                    {
+                        // FSC_CONNECT response -- is ... strange
+                        if (frame.Message[0] == 1)
+                        {
+                            reqConnectionToPeer = false;
+                            cyclesSinceConnectReq = 0;
+                            establishedConnection = true;
+                            lastPing = DateTime.Now;
+
+                            FSCConnectResponse resp = new FSCConnectResponse(frame.Message);
+                            ConnectResponse?.Invoke(resp);
+                        }
+                    }
+                    else
+                    {
+                        FSCMessage message = FSCMessage.CreateMessage(frame.Message);
+                        switch (message.MessageId)
+                        {
+                            case MessageType.FSC_ACK:
+                                {
+                                    FSCACK ackMessage = (FSCACK)message;
+                                    switch (ackMessage.ResponseCode)
+                                    {
+                                        case AckResponseCode.CONTROL_NAK:
+                                        case AckResponseCode.CONTROL_NAK_CONNECTED:
+                                        case AckResponseCode.CONTROL_NAK_M_UNSUPP:
+                                        case AckResponseCode.CONTROL_NAK_V_UNSUPP:
+                                        case AckResponseCode.CONTROL_NAK_F_UNSUPP:
+                                        case AckResponseCode.CONTROL_NAK_PARMS:
+                                        case AckResponseCode.CONTROL_NAK_BUSY:
+                                            Log.Logger.Error($"({Program.Configuration.Name}) DFSI ERROR: {ackMessage.AckMessageId} {ackMessage.ResponseCode}");
+                                            break;
+
+                                        case AckResponseCode.CONTROL_ACK:
+                                            {
+                                                if (ackMessage.AckMessageId == MessageType.FSC_DISCONNECT)
+                                                {
+                                                    reqConnectionToPeer = false;
+                                                    cyclesSinceConnectReq = 0;
+                                                    establishedConnection = false;
+                                                    lastPing = DateTime.Now;
+                                                }
+                                            }
+                                            break;
+
+                                        default:
+                                            Log.Logger.Error($"({Program.Configuration.Name}) Unknown DFSI control ack opcode {(byte)ackMessage.AckMessageId} -- {FneUtils.HexDump(frame.Message, 0)}");
+                                            break;
+                                    }
+                                }
+                                break;
+
+                            case MessageType.FSC_CONNECT:
+                                {
+                                    FSCConnectResponse resp = new FSCConnectResponse();
+                                    resp.VCBasePort = (ushort)Program.Configuration.LocalRtpPort;
+
+                                    byte[] respBuffer = new byte[resp.Length];
+                                    resp.Encode(ref respBuffer);
+
+                                    SendRemote(respBuffer);
+                                }
+                                break;
+
+                            case MessageType.FSC_DISCONNECT:
+                                {
+                                    reqConnectionToPeer = false;
+                                    cyclesSinceConnectReq = 0;
+                                    establishedConnection = false;
+                                }
+                                break;
+
+                            case MessageType.FSC_HEARTBEAT:
+                                SendRemote(new FSCACK(MessageType.FSC_HEARTBEAT, AckResponseCode.CONTROL_ACK));
+                                lastPing = DateTime.Now;
+                                break;
+
+                            default:
+                                Log.Logger.Error($"({Program.Configuration.Name}) Unknown DFSI control opcode {(byte)message.MessageId} -- {FneUtils.HexDump(frame.Message, 0)}");
+                                break;
+                        }
+                    }
                 }
                 catch (SocketException se)
                 {
@@ -254,11 +383,35 @@ namespace dvmdfsi.DFSI
             CancellationToken ct = maintainenceCancelToken.Token;
             while (!abortListening)
             {
-                // TODO TODO TODO
+                if (reqConnectionToPeer)
+                    ++cyclesSinceConnectReq;
+                if (reqConnectionToPeer && cyclesSinceConnectReq > MAX_CONNECT_WAIT_CYCLES)
+                {
+                    Log.Logger.Error($"({Program.Configuration.Name}) Remote DFSI host failed to response to FSC_CONNECT. {masterEndpoint}");
+                    reqConnectionToPeer = false;
+                    cyclesSinceConnectReq = 0;
+                }
+
+                if (establishedConnection)
+                {
+                    SendRemote(new FSCHeartbeat());
+
+                    DateTime dt = lastPing.AddSeconds(Program.Configuration.DfsiHeartbeat * MAX_MISSED_HB);
+                    if (dt < DateTime.Now)
+                    {
+                        Log.Logger.Error($"({Program.Configuration.Name}) Remote DFSI host has timed out. {masterEndpoint}");
+
+                        reqConnectionToPeer = false;
+                        cyclesSinceConnectReq = 0;
+                        establishedConnection = false;
+
+                        SendRemote(new FSCDisconnect());
+                    }
+                }
 
                 try
                 {
-                    await Task.Delay(1000, ct);
+                    await Task.Delay(Program.Configuration.DfsiHeartbeat * 1000, ct);
                 }
                 catch (TaskCanceledException) { /* stub */ }
             }
