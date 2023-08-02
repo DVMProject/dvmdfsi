@@ -1,6 +1,6 @@
-# Digital Voice Modem FNE DFSI
+# Digital Voice Modem FNE IP/DFSI
 
-The Digital Voice Modem FNE DFSI is a helper application designed to allow Rx and Tx of digital audio from/to P25 DFSI-compliant servers.
+The Digital Voice Modem FNE IP/DFSI is a helper application designed to allow Rx and Tx of digital audio from/to P25 IP DFSI-compliant servers.
 
 ## Command Line Parameters
 
