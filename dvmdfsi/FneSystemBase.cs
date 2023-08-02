@@ -30,9 +30,11 @@ using Serilog;
 
 using dvmdfsi.FNE;
 using dvmdfsi.FNE.DMR;
+using dvmdfsi.FNE.P25;
 
 using dvmdfsi.DFSI;
 using dvmdfsi.DFSI.FSC;
+using dvmdfsi.DFSI.RTP;
 
 namespace dvmdfsi
 {
@@ -133,8 +135,8 @@ namespace dvmdfsi
         private Random rand;
         private uint txStreamId;
 
-        private Control dfsiControl;
-        private RTP dfsiRTP;
+        private ControlService dfsiControl;
+        private RTPService dfsiRTP;
 
         /*
         ** Properties
@@ -251,8 +253,8 @@ namespace dvmdfsi
                 }
             };
 
-            this.dfsiControl = new Control();
-            this.dfsiRTP = new RTP();
+            this.dfsiControl = new ControlService();
+            this.dfsiRTP = new RTPService();
             this.dfsiRTP.RTPFrameHandler += DfsiRTP_RTPFrameHandler;
         }
 
@@ -265,7 +267,32 @@ namespace dvmdfsi
         /// <returns></returns>
         private void DfsiRTP_RTPFrameHandler(UdpFrame frame, byte[] message, RtpHeader rtpHeader)
         {
-            // TODO TODO TODO
+            P25RTPPayload payload = new P25RTPPayload(message);
+            for (int i = 0; i < payload.BlockHeaders.Count; i++)
+            {
+                BlockHeader header = payload.BlockHeaders[i];
+                switch (header.Type)
+                {
+                    case BlockType.START_OF_STREAM:
+                        {
+                            // TODO TODO TODO
+                        }
+                        break;
+
+                    case BlockType.FULL_RATE_VOICE:
+                        {
+                            int blkIdx = payload.BlockHeaderToVoiceBlock[i];
+                            FullRateVoice voice = payload.FullRateVoiceBlocks[blkIdx];
+
+                            // TODO TODO TODO
+                        }
+                        break;
+
+                    default:
+                        Log.Logger.Error($"Unknown/Unhandled DFSI opcode {header.Type}");
+                        break;
+                }
+            }
         }
 
         /// <summary>

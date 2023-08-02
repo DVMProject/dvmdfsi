@@ -38,7 +38,6 @@ namespace dvmdfsi
     /// </summary>
     public abstract partial class FneSystemBase
     {
-        private static DateTime start = DateTime.Now;
         private const int P25_MSG_HDR_SIZE = 24;
         private const int IMBE_BUF_LEN = 11;
 

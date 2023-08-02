@@ -48,7 +48,7 @@ namespace dvmdfsi.DFSI
     /// <summary>
     /// Implements the DFSI RTP port interface
     /// </summary>
-    public class RTP
+    public class RTPService
     {
         private static Random rand = null;
 
@@ -102,7 +102,7 @@ namespace dvmdfsi.DFSI
         /// <summary>
         /// Static initializer for the <see cref="RTP"/> class.
         /// </summary>
-        static RTP()
+        static RTPService()
         {
             int seed = 0;
             using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
@@ -119,7 +119,7 @@ namespace dvmdfsi.DFSI
         /// <summary>
         /// Initializes a new instance of the <see cref="RTP"/> class.
         /// </summary>
-        public RTP() : this(new IPEndPoint(IPAddress.Any, Program.Configuration.LocalRtpPort))
+        public RTPService() : this(new IPEndPoint(IPAddress.Any, Program.Configuration.LocalRtpPort))
         {
             /* stub */
         }
@@ -128,7 +128,7 @@ namespace dvmdfsi.DFSI
         /// Initializes a new instance of the <see cref="RTP"/> class.
         /// </summary>
         /// <param name="endpoint"></param>
-        public RTP(IPEndPoint endpoint)
+        public RTPService(IPEndPoint endpoint)
         {
             server = new UdpListener(endpoint);
 
@@ -388,5 +388,5 @@ namespace dvmdfsi.DFSI
                     abortListening = true;
             }
         }
-    } // public class RTP
+    } // public class RTPService
 } // namespace dvmdfsi.DFSI

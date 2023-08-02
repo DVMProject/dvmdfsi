@@ -47,7 +47,7 @@ namespace dvmdfsi.DFSI
     /// <summary>
     /// Implements the DFSI control port interface.
     /// </summary>
-    public class Control
+    public class ControlService
     {
         private const int MAX_MISSED_HB = 5;
         private const int MAX_CONNECT_WAIT_CYCLES = 10;
@@ -76,7 +76,7 @@ namespace dvmdfsi.DFSI
         */
 
         /// <summary>
-        /// Gets the <see cref="IPEndPoint"/> for this <see cref="Control"/>.
+        /// Gets the <see cref="IPEndPoint"/> for this <see cref="ControlService"/>.
         /// </summary>
         public IPEndPoint EndPoint
         {
@@ -89,7 +89,7 @@ namespace dvmdfsi.DFSI
         }
 
         /// <summary>
-        /// Flag indicating whether this <see cref="Control"/> is running.
+        /// Flag indicating whether this <see cref="ControlService"/> is running.
         /// </summary>
         public bool IsStarted => isStarted;
 
@@ -107,9 +107,9 @@ namespace dvmdfsi.DFSI
         */
 
         /// <summary>
-        /// Static initializer for the <see cref="Control"/> class.
+        /// Static initializer for the <see cref="ControlService"/> class.
         /// </summary>
-        static Control()
+        static ControlService()
         {
             int seed = 0;
             using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
@@ -124,18 +124,18 @@ namespace dvmdfsi.DFSI
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Control"/> class.
+        /// Initializes a new instance of the <see cref="ControlService"/> class.
         /// </summary>
-        public Control() : this(new IPEndPoint(IPAddress.Any, Program.Configuration.LocalControlPort))
+        public ControlService() : this(new IPEndPoint(IPAddress.Any, Program.Configuration.LocalControlPort))
         {
             /* stub */
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Control"/> class.
+        /// Initializes a new instance of the <see cref="ControlService"/> class.
         /// </summary>
         /// <param name="endpoint"></param>
-        public Control(IPEndPoint endpoint)
+        public ControlService(IPEndPoint endpoint)
         {
             server = new UdpListener(endpoint);
 
@@ -355,8 +355,13 @@ namespace dvmdfsi.DFSI
                                 break;
 
                             case MessageType.FSC_HEARTBEAT:
-                                SendRemote(new FSCACK(MessageType.FSC_HEARTBEAT, AckResponseCode.CONTROL_ACK));
-                                lastPing = DateTime.Now;
+                                {
+                                    if (establishedConnection)
+                                    {
+                                        SendRemote(new FSCACK(MessageType.FSC_HEARTBEAT, AckResponseCode.CONTROL_ACK));
+                                        lastPing = DateTime.Now;
+                                    }
+                                }
                                 break;
 
                             default:
@@ -416,5 +421,5 @@ namespace dvmdfsi.DFSI
                 catch (TaskCanceledException) { /* stub */ }
             }
         }
-    } // public class Control
+    } // public class ControlService
 } // namespace dvmdfsi.DFSI
