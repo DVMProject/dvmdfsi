@@ -241,6 +241,9 @@ namespace dvmdfsi
                 }
             };
 
+            netLDU1 = new byte[9 * 25];
+            netLDU2 = new byte[9 * 25];
+
             this.dfsiControl = new ControlService();
             this.dfsiRTP = new RTPService();
             if (!Program.Configuration.TheManufacturer)
@@ -259,6 +262,9 @@ namespace dvmdfsi
         /// <returns></returns>
         private void Mot_DfsiRTP_RTPFrameHandler(UdpFrame frame, byte[] message, RtpHeader rtpHeader)
         {
+            if (callInProgress)
+                return;
+
             byte frameType = message[0U];
             if (frameType == P25DFSI.P25_DFSI_MOT_START_STOP)
             {
@@ -521,6 +527,9 @@ namespace dvmdfsi
         /// <returns></returns>
         private void TIA_DfsiRTP_RTPFrameHandler(UdpFrame frame, byte[] message, RtpHeader rtpHeader)
         {
+            if (callInProgress)
+                return;
+
             P25RTPPayload payload = new P25RTPPayload(message);
             for (int i = 0; i < payload.BlockHeaders.Count; i++)
             {
