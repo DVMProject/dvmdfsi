@@ -47,6 +47,7 @@ namespace dvmdfsi.DFSI.RTP
     {
         public const int LENGTH = 17;
         public const int SHORTENED_LENGTH = 14;
+        public const int ADDTL_LENGTH = 4;
         private const int IMBE_BUF_LEN = 11;
 
         /// <summary>
@@ -141,6 +142,9 @@ namespace dvmdfsi.DFSI.RTP
             IMBE = new byte[IMBE_BUF_LEN];
 
             FrameType = (byte)(data[0U] & 0xFFU);                               // Frame Type
+            if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE2 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE11)
+                shortened = true;
+
             if (shortened)
             {
                 for (int i = 0; i < IMBE_BUF_LEN; i++)
@@ -173,6 +177,9 @@ namespace dvmdfsi.DFSI.RTP
                 return;
 
             data[0U] = FrameType;                                               // Frame Type
+            if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE2 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE11)
+                shortened = true;
+
             if (shortened)
             {
                 for (int i = 0; i < IMBE_BUF_LEN; i++)

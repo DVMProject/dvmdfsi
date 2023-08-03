@@ -95,6 +95,14 @@ namespace dvmdfsi
         /// 
         /// </summary>
         public int DfsiHeartbeat = 5;
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool NoConnectionEstablishment = false;
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool TheManufacturer = false;
 
         /// <summary>
         /// 

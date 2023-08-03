@@ -502,10 +502,56 @@ namespace dvmdfsi
         /// <summary>
         /// Helper to send DFSI start of stream.
         /// </summary>
-        private void DFSIStartOfStream()
+        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        private void Mot_DFSIStartOfStream()
         {
-            if (!dfsiControl.IsConnected)
-                return;
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
+
+            MotStartOfStream start = new MotStartOfStream();
+            start.StartStop = StartStopFlag.START;
+
+            byte[] buffer = new byte[MotStartOfStream.LENGTH];
+            start.Encode(ref buffer);
+
+            dfsiRTP.SendRemote(buffer);
+        }
+
+        /// <summary>
+        /// Helper to send DFSI end of stream.
+        /// </summary>
+        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        private void Mot_DFSIEndOfStream()
+        {
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
+
+            MotStartOfStream start = new MotStartOfStream();
+            start.StartStop = StartStopFlag.STOP;
+
+            byte[] buffer = new byte[MotStartOfStream.LENGTH];
+            start.Encode(ref buffer);
+
+            dfsiRTP.SendRemote(buffer);
+        }
+
+        /// <summary>
+        /// Helper to send DFSI start of stream.
+        /// </summary>
+        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        private void TIA_DFSIStartOfStream()
+        {
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
 
             P25RTPPayload payload = new P25RTPPayload();
             payload.Control.Signal = true;
@@ -525,10 +571,14 @@ namespace dvmdfsi
         /// <summary>
         /// Helper to send DFSI end of stream.
         /// </summary>
-        private void DFSIEndOfStream()
+        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        private void TIA_DFSIEndOfStream()
         {
-            if (!dfsiControl.IsConnected)
-                return;
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
 
             P25RTPPayload payload = new P25RTPPayload();
             payload.Control.Signal = true;
@@ -546,13 +596,170 @@ namespace dvmdfsi
         /// <summary>
         /// Helper to send P25 IMBE frames as DFSI frames.
         /// </summary>
+        /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         /// <param name="duid"></param>
         /// <param name="ldu"></param>
         /// <param name="e"></param>
-        private void DFSISendFrame(P25DUID duid, byte[] ldu, P25DataReceivedEvent e)
+        private void Mot_DFSISendFrame(P25DUID duid, byte[] ldu, P25DataReceivedEvent e)
         {
-            if (!dfsiControl.IsConnected)
-                return;
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
+
+            // decode 9 IMBE codewords into PCM samples
+            for (int n = 0; n < 9; n++)
+            {
+                byte[] buffer = null;
+                MotFullRateVoice voice = new MotFullRateVoice();
+
+                switch (n)
+                {
+                    case 0:     // VOICE1 / 10
+                        {
+                            MotStartVoiceFrame startVoice = new MotStartVoiceFrame();
+                            startVoice.StartOfStream = new MotStartOfStream();
+                            startVoice.StartOfStream.StartStop = StartStopFlag.START;
+                            startVoice.FullRateVoice = new MotFullRateVoice();
+                            Buffer.BlockCopy(ldu, 10, startVoice.FullRateVoice.IMBE, 0, IMBE_BUF_LEN);
+
+                            buffer = new byte[MotStartVoiceFrame.LENGTH];
+                            startVoice.Encode(ref buffer);
+                        }
+                        break;
+                    case 1:     // VOICE2 / 11
+                        Buffer.BlockCopy(ldu, 26, voice.IMBE, 0, IMBE_BUF_LEN);
+                        break;
+                    case 2:     // VOICE3 / 12
+                        {
+                            Buffer.BlockCopy(ldu, 55, voice.IMBE, 0, IMBE_BUF_LEN);
+                            voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                            switch (duid)
+                            {
+                                case P25DUID.LDU1:
+                                    {
+                                        voice.AdditionalFrameData[0] = e.Data[4];   // LCO
+                                        voice.AdditionalFrameData[1] = e.Data[5];   // MFId
+                                        voice.AdditionalFrameData[2] = ldu[53];     // Service Options
+                                    }
+                                    break;
+
+                                case P25DUID.LDU2:
+                                    {
+                                        voice.AdditionalFrameData[0] = ldu[51];     // MI
+                                        voice.AdditionalFrameData[1] = ldu[52];
+                                        voice.AdditionalFrameData[2] = ldu[53];
+                                    }
+                                    break;
+                            }
+                        }
+                        break;
+                    case 3:     // VOICE4 / 13
+                        {
+                            Buffer.BlockCopy(ldu, 80, voice.IMBE, 0, IMBE_BUF_LEN);
+                            voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                            switch (duid)
+                            {
+                                case P25DUID.LDU1:
+                                    {
+                                        voice.AdditionalFrameData[0] = e.Data[8];   // Destination Address
+                                        voice.AdditionalFrameData[1] = e.Data[9];
+                                        voice.AdditionalFrameData[2] = e.Data[10];
+                                    }
+                                    break;
+
+                                case P25DUID.LDU2:
+                                    {
+                                        voice.AdditionalFrameData[0] = ldu[76];     // MI
+                                        voice.AdditionalFrameData[1] = ldu[77];
+                                        voice.AdditionalFrameData[2] = ldu[78];
+                                    }
+                                    break;
+                            }
+                        }
+                        break;
+                    case 4:     // VOICE5 / 14
+                        {
+                            Buffer.BlockCopy(ldu, 105, voice.IMBE, 0, IMBE_BUF_LEN);
+                            voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                            switch (duid)
+                            {
+                                case P25DUID.LDU1:
+                                    {
+                                        voice.AdditionalFrameData[0] = e.Data[5];   // Source Address
+                                        voice.AdditionalFrameData[1] = e.Data[6];
+                                        voice.AdditionalFrameData[2] = e.Data[7];
+                                    }
+                                    break;
+
+                                case P25DUID.LDU2:
+                                    {
+                                        voice.AdditionalFrameData[0] = ldu[101];    // MI
+                                        voice.AdditionalFrameData[1] = ldu[102];
+                                        voice.AdditionalFrameData[2] = ldu[103];
+                                    }
+                                    break;
+                            }
+                        }
+                        break;
+                    case 5:     // VOICE6 / 15
+                        {
+                            Buffer.BlockCopy(ldu, 130, voice.IMBE, 0, IMBE_BUF_LEN);
+                            switch (duid)
+                            {
+                                case P25DUID.LDU2:
+                                    {
+                                        voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                                        voice.AdditionalFrameData[0] = ldu[126];    // MI
+                                        voice.AdditionalFrameData[1] = ldu[127];
+                                        voice.AdditionalFrameData[2] = ldu[128];
+                                    }
+                                    break;
+                            }
+                        }
+                        break;
+                    case 6:     // VOICE7 / 16
+                        Buffer.BlockCopy(ldu, 155, voice.IMBE, 0, IMBE_BUF_LEN);
+                        break;
+                    case 7:     // VOICE8 / 17
+                        Buffer.BlockCopy(ldu, 180, voice.IMBE, 0, IMBE_BUF_LEN);
+                        break;
+                    case 8:     // VOICE9 / 18
+                        {
+                            Buffer.BlockCopy(ldu, 204, voice.IMBE, 0, IMBE_BUF_LEN);
+                            voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                            voice.AdditionalFrameData[0] = e.Data[20U];             // LSD 1
+                            voice.AdditionalFrameData[1] = e.Data[21U];             // LSD 2
+                        }
+                        break;
+                }
+
+                if (n != 0)
+                {
+                    buffer = new byte[voice.Size()];
+                    voice.Encode(ref buffer);
+                }
+
+                if (buffer != null)
+                    dfsiRTP.SendRemote(buffer);
+            }
+        }
+
+        /// <summary>
+        /// Helper to send P25 IMBE frames as DFSI frames.
+        /// </summary>
+        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        /// <param name="duid"></param>
+        /// <param name="ldu"></param>
+        /// <param name="e"></param>
+        private void TIA_DFSISendFrame(P25DUID duid, byte[] ldu, P25DataReceivedEvent e)
+        {
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
 
             // decode 9 IMBE codewords into PCM samples
             for (int n = 0; n < 9; n++)
@@ -726,7 +933,10 @@ namespace dvmdfsi
                     RxStart = pktTime;
                     Log.Logger.Information($"({SystemName}) P25D: Traffic *CALL START     * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
                     dfsiRTP.pktSeq(true);
-                    DFSIStartOfStream();
+                    if (Program.Configuration.TheManufacturer)
+                        Mot_DFSIStartOfStream();
+                    else
+                        TIA_DFSIStartOfStream();
                 }
 
                 if (((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC)) && (RxType != FrameType.TERMINATOR))
@@ -734,7 +944,10 @@ namespace dvmdfsi
                     callInProgress = false;
                     TimeSpan callDuration = pktTime - RxStart;
                     Log.Logger.Information($"({SystemName}) P25D: Traffic *CALL END       * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} DUR {callDuration} [STREAM ID {e.StreamId}]");
-                    DFSIEndOfStream();
+                    if (Program.Configuration.TheManufacturer)
+                        Mot_DFSIEndOfStream();
+                    else
+                        TIA_DFSIEndOfStream();
                 }
 
                 int count = 0;
@@ -786,7 +999,10 @@ namespace dvmdfsi
                                 count += 16;
 
                                 // send 9 IMBE codewords over DFSI
-                                DFSISendFrame(P25DUID.LDU1, netLDU1, e);
+                                if (Program.Configuration.TheManufacturer)
+                                    Mot_DFSISendFrame(P25DUID.LDU1, netLDU1, e);
+                                else
+                                    TIA_DFSISendFrame(P25DUID.LDU1, netLDU1, e);
                             }
                         }
                         break;
@@ -836,7 +1052,10 @@ namespace dvmdfsi
                                 count += 16;
 
                                 // send 9 IMBE codewords over DFSI
-                                DFSISendFrame(P25DUID.LDU2, netLDU2, e);
+                                if (Program.Configuration.TheManufacturer)
+                                    Mot_DFSISendFrame(P25DUID.LDU2, netLDU2, e);
+                                else
+                                    TIA_DFSISendFrame(P25DUID.LDU2, netLDU2, e);
                             }
                         }
                         break;

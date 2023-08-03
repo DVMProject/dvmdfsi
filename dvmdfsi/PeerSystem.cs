@@ -82,6 +82,10 @@ namespace dvmdfsi
             Log.Logger.Information($"    Remote DFSI Addresss: {Program.Configuration.RemoteDfsiAddress}");
             Log.Logger.Information($"    Remote DFSI Control Port: {Program.Configuration.RemoteControlPort}");
             Log.Logger.Information($"    Remote DFSI RTP Port: {Program.Configuration.RemoteRtpPort}");
+            string noConnEstablish = (Program.Configuration.NoConnectionEstablishment) ? "yes" : "no";
+            Log.Logger.Information($"    Automatic Connection Establishment: {noConnEstablish}");
+            string theManuf = (Program.Configuration.TheManufacturer) ? "yes" : "no";
+            Log.Logger.Information($"    \"The\" Manufacturer RTP Packets: {theManuf}");
 
             FnePeer peer = new FnePeer(Program.Configuration.Name, Program.Configuration.PeerId, endpoint);
 

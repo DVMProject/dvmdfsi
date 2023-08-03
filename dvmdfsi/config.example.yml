@@ -22,6 +22,10 @@ passphrase: RPT1234
 
 # Time in seconds between heartbets to DFSI peers.
 dfsiHeartbeat: 5
+# Flag disabling control connection establishment.
+noConnectionEstablishment: false
+# Flag enabling "the" Manufacturer standard of RTP.
+theManufacturer: false
 
 # Local DFSI RTP Port number.
 localRtpPort: 27500

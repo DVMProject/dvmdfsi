@@ -243,17 +243,279 @@ namespace dvmdfsi
 
             this.dfsiControl = new ControlService();
             this.dfsiRTP = new RTPService();
-            this.dfsiRTP.RTPFrameHandler += DfsiRTP_RTPFrameHandler;
+            if (!Program.Configuration.TheManufacturer)
+                this.dfsiRTP.RTPFrameHandler += TIA_DfsiRTP_RTPFrameHandler;
+            else
+                this.dfsiRTP.RTPFrameHandler += Mot_DfsiRTP_RTPFrameHandler;
         }
 
         /// <summary>
         /// DFSI RTP Frame Handler.
         /// </summary>
+        /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         /// <param name="frame"></param>
         /// <param name="message"></param>
         /// <param name="rtpHeader"></param>
         /// <returns></returns>
-        private void DfsiRTP_RTPFrameHandler(UdpFrame frame, byte[] message, RtpHeader rtpHeader)
+        private void Mot_DfsiRTP_RTPFrameHandler(UdpFrame frame, byte[] message, RtpHeader rtpHeader)
+        {
+            byte frameType = message[0U];
+            if (frameType == P25DFSI.P25_DFSI_MOT_START_STOP)
+            {
+                MotStartOfStream start = new MotStartOfStream(message);
+                if (start.StartStop == StartStopFlag.START)
+                {
+                    if (txStreamId == 0)
+                    {
+                        txStreamId = (uint)rand.Next(int.MinValue, int.MaxValue);
+                        remoteCallInProgress = true;
+                        remoteCallData.Reset();
+                        Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL START     * [STREAM ID {txStreamId}]");
+                    }
+                }
+                else
+                {
+                    Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL END       * [STREAM ID {txStreamId}]");
+                    txStreamId = 0;
+                    remoteCallInProgress = false;
+                    remoteCallData.Reset();
+                }
+            }
+            else
+            {
+                if (frameType == P25DFSI.P25_DFSI_LDU1_VOICE1 || frameType == P25DFSI.P25_DFSI_LDU2_VOICE10)
+                {
+                    MotStartVoiceFrame voice = new MotStartVoiceFrame(message);
+                    switch (frameType)
+                    {
+                        // LDU1
+                        case P25DFSI.P25_DFSI_LDU1_VOICE1:
+                            Buffer.BlockCopy(voice.FullRateVoice.IMBE, 0, netLDU1, 10, IMBE_BUF_LEN);
+                            break;
+
+                        // LDU2
+                        case P25DFSI.P25_DFSI_LDU2_VOICE10:
+                            Buffer.BlockCopy(voice.FullRateVoice.IMBE, 0, netLDU1, 10, IMBE_BUF_LEN);
+                            break;
+                    }
+                }
+                else
+                {
+                    MotFullRateVoice voice = new MotFullRateVoice(message);
+                    switch (frameType)
+                    {
+                        // LDU1
+                        case P25DFSI.P25_DFSI_LDU1_VOICE2:
+                            Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 26, IMBE_BUF_LEN);
+                            break;
+                        case P25DFSI.P25_DFSI_LDU1_VOICE3:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 55, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 3)
+                                    {
+                                        remoteCallData.LCO = voice.AdditionalFrameData[0];
+                                        remoteCallData.MFId = voice.AdditionalFrameData[1];
+                                        remoteCallData.ServiceOptions = voice.AdditionalFrameData[3];
+                                    }
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC3 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                        case P25DFSI.P25_DFSI_LDU1_VOICE4:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 80, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 3)
+                                        remoteCallData.DstId = FneUtils.Bytes3ToUInt32(voice.AdditionalFrameData, 0);
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC4 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                        case P25DFSI.P25_DFSI_LDU1_VOICE5:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 105, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 3)
+                                        remoteCallData.SrcId = FneUtils.Bytes3ToUInt32(voice.AdditionalFrameData, 0);
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC5 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                        case P25DFSI.P25_DFSI_LDU1_VOICE6:
+                            Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 130, IMBE_BUF_LEN);
+                            break;
+                        case P25DFSI.P25_DFSI_LDU1_VOICE7:
+                            Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 155, IMBE_BUF_LEN);
+                            break;
+                        case P25DFSI.P25_DFSI_LDU1_VOICE8:
+                            Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 180, IMBE_BUF_LEN);
+                            break;
+                        case P25DFSI.P25_DFSI_LDU1_VOICE9:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU1, 204, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 2)
+                                    {
+                                        remoteCallData.LSD1 = voice.AdditionalFrameData[0];
+                                        remoteCallData.LSD2 = voice.AdditionalFrameData[1];
+                                    }
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC9 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+
+                        // LDU2
+                        case P25DFSI.P25_DFSI_LDU2_VOICE11:
+                            Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 26, IMBE_BUF_LEN);
+                            break;
+                        case P25DFSI.P25_DFSI_LDU2_VOICE12:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 55, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 3)
+                                    {
+                                        remoteCallData.MessageIndicator[0] = voice.AdditionalFrameData[0];
+                                        remoteCallData.MessageIndicator[1] = voice.AdditionalFrameData[1];
+                                        remoteCallData.MessageIndicator[2] = voice.AdditionalFrameData[2];
+                                    }
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC12 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                        case P25DFSI.P25_DFSI_LDU2_VOICE13:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 80, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 3)
+                                    {
+                                        remoteCallData.MessageIndicator[3] = voice.AdditionalFrameData[0];
+                                        remoteCallData.MessageIndicator[4] = voice.AdditionalFrameData[1];
+                                        remoteCallData.MessageIndicator[5] = voice.AdditionalFrameData[2];
+                                    }
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC13 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                        case P25DFSI.P25_DFSI_LDU2_VOICE14:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 105, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 3)
+                                    {
+                                        remoteCallData.MessageIndicator[6] = voice.AdditionalFrameData[0];
+                                        remoteCallData.MessageIndicator[7] = voice.AdditionalFrameData[1];
+                                        remoteCallData.MessageIndicator[8] = voice.AdditionalFrameData[2];
+                                    }
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC14 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                        case P25DFSI.P25_DFSI_LDU2_VOICE15:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 130, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 3)
+                                    {
+                                        remoteCallData.AlgorithmId = voice.AdditionalFrameData[0];
+                                        remoteCallData.KeyId = FneUtils.ToUInt16(voice.AdditionalFrameData, 1);
+                                    }
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC15 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                        case P25DFSI.P25_DFSI_LDU2_VOICE16:
+                            Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 155, IMBE_BUF_LEN);
+                            break;
+                        case P25DFSI.P25_DFSI_LDU2_VOICE17:
+                            Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 180, IMBE_BUF_LEN);
+                            break;
+                        case P25DFSI.P25_DFSI_LDU2_VOICE18:
+                            {
+                                Buffer.BlockCopy(voice.IMBE, 0, netLDU2, 204, IMBE_BUF_LEN);
+                                if (voice.AdditionalFrameData != null)
+                                {
+                                    if (voice.AdditionalFrameData.Length >= 2)
+                                    {
+                                        remoteCallData.LSD1 = voice.AdditionalFrameData[0];
+                                        remoteCallData.LSD2 = voice.AdditionalFrameData[1];
+                                    }
+                                    else
+                                        Log.Logger.Warning($"({SystemName}) DFSI Traffic *TRAFFIC        * VC18 Missing Metadata [STREAM ID {txStreamId}]");
+                                }
+                            }
+                            break;
+                    }
+                }
+
+                FnePeer peer = (FnePeer)fne;
+
+                // send P25 LDU1
+                if (p25N == 8U)
+                {
+                    ushort pktSeq = 0;
+                    if (p25SeqNo == 0U)
+                        pktSeq = peer.pktSeq(true);
+                    else
+                        pktSeq = peer.pktSeq();
+
+                    Log.Logger.Information($"({SystemName}) P25D: Traffic *VOICE FRAME    * PEER {fne.PeerId} SRC_ID {remoteCallData.SrcId} TGID {remoteCallData.DstId} [STREAM ID {txStreamId}]");
+
+                    byte[] buffer = new byte[200];
+                    CreateP25MessageHdr((byte)P25DUID.LDU1, remoteCallData, ref buffer);
+                    CreateP25LDU1Message(ref buffer, remoteCallData);
+
+                    peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), buffer, pktSeq, txStreamId);
+                }
+
+                // send P25 LDU2
+                if (p25N == 17U)
+                {
+                    ushort pktSeq = 0;
+                    if (p25SeqNo == 0U)
+                        pktSeq = peer.pktSeq(true);
+                    else
+                        pktSeq = peer.pktSeq();
+
+                    Log.Logger.Information($"({SystemName}) P25D: Traffic *VOICE FRAME    * PEER {fne.PeerId} SRC_ID {remoteCallData.SrcId} TGID {remoteCallData.DstId} [STREAM ID {txStreamId}]");
+
+                    byte[] buffer = new byte[200];
+                    CreateP25MessageHdr((byte)P25DUID.LDU2, remoteCallData, ref buffer);
+                    CreateP25LDU2Message(ref buffer, remoteCallData);
+
+                    peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), buffer, pktSeq, txStreamId);
+                }
+
+                p25SeqNo++;
+                p25N++;
+            }
+        }
+
+        /// <summary>
+        /// DFSI RTP Frame Handler.
+        /// </summary>
+        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        /// <param name="frame"></param>
+        /// <param name="message"></param>
+        /// <param name="rtpHeader"></param>
+        /// <returns></returns>
+        private void TIA_DfsiRTP_RTPFrameHandler(UdpFrame frame, byte[] message, RtpHeader rtpHeader)
         {
             P25RTPPayload payload = new P25RTPPayload(message);
             for (int i = 0; i < payload.BlockHeaders.Count; i++)
@@ -511,12 +773,15 @@ namespace dvmdfsi
             if (!fne.IsStarted)
                 fne.Start();
 
-            if (!dfsiControl.IsStarted)
-                dfsiControl.Start();
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsStarted)
+                    dfsiControl.Start();
 
-            dfsiControl.ConnectResponse += DfsiControl_ConnectResponse;
+                dfsiControl.ConnectResponse += DfsiControl_ConnectResponse;
 
-            ConnectDFSI();
+                ConnectDFSI();
+            }
         }
 
         /// <summary>
