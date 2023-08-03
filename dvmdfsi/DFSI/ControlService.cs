@@ -93,6 +93,11 @@ namespace dvmdfsi.DFSI
         /// </summary>
         public bool IsStarted => isStarted;
 
+        /// <summary>
+        /// Flag indicating whether this <see cref="ControlService"/> has an established connection.
+        /// </summary>
+        public bool IsConnected => establishedConnection;
+
         /*
         ** Events/Callbacks
         */
