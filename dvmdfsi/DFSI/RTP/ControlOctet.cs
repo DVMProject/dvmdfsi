@@ -73,7 +73,7 @@ namespace dvmdfsi.DFSI.RTP
         public ControlOctet()
         {
             Signal = false;
-            Compact = false;
+            Compact = true;
             BlockHeaderCount = 0;
         }
         /// <summary>
