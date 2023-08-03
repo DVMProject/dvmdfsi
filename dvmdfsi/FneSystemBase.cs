@@ -281,6 +281,10 @@ namespace dvmdfsi
                     remoteCallData.Reset();
                 }
             }
+            else if (frameType == P25DFSI.P25_DFSI_MOT_VHDR_1 || frameType == P25DFSI.P25_DFSI_MOT_VHDR_2)
+            {
+                // skip doing anything with this for now...
+            }
             else
             {
                 if (frameType == P25DFSI.P25_DFSI_LDU1_VOICE1 || frameType == P25DFSI.P25_DFSI_LDU2_VOICE10)

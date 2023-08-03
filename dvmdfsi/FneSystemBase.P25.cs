@@ -542,6 +542,49 @@ namespace dvmdfsi
         }
 
         /// <summary>
+        /// Helper to send DFSI voice header 1.
+        /// </summary>
+        /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
+        private void Mot_DFSIVoiceHeader1()
+        {
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
+
+            MotVoiceHeader1 vhdr1 = new MotVoiceHeader1();
+            vhdr1.StartOfStream = new MotStartOfStream();
+            vhdr1.StartOfStream.StartStop = StartStopFlag.START;
+
+            byte[] buffer = new byte[MotVoiceHeader1.LENGTH];
+            vhdr1.Encode(ref buffer);
+
+            dfsiRTP.SendRemote(buffer);
+        }
+
+        /// <summary>
+        /// Helper to send DFSI voice header 2.
+        /// </summary>
+        /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
+        private void Mot_DFSIVoiceHeader2(uint dstId)
+        {
+            if (!Program.Configuration.NoConnectionEstablishment)
+            {
+                if (!dfsiControl.IsConnected)
+                    return;
+            }
+
+            MotVoiceHeader2 vhdr2 = new MotVoiceHeader2();
+            vhdr2.TGID = (ushort)dstId;
+
+            byte[] buffer = new byte[MotVoiceHeader2.LENGTH];
+            vhdr2.Encode(ref buffer);
+
+            dfsiRTP.SendRemote(buffer);
+        }
+
+        /// <summary>
         /// Helper to send DFSI start of stream.
         /// </summary>
         /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
@@ -934,7 +977,11 @@ namespace dvmdfsi
                     Log.Logger.Information($"({SystemName}) P25D: Traffic *CALL START     * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
                     dfsiRTP.pktSeq(true);
                     if (Program.Configuration.TheManufacturer)
+                    {
                         Mot_DFSIStartOfStream();
+                        Mot_DFSIVoiceHeader1();
+                        Mot_DFSIVoiceHeader2(e.DstId);
+                    }
                     else
                         TIA_DFSIStartOfStream();
                 }
