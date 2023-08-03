@@ -27,7 +27,7 @@ dfsiHeartbeat: 5
 localRtpPort: 27500
 
 # Remote RFSS DFSI Hostname/IP address of FNE master to connect to.
-remoteDfsiAddress: 127.0.0.1
+remoteDfsiAddress: 127.0.0.2
 # Remote DFSI Control Port number to connect to.
 remoteControlPort: 27000
 # Remote DFSI RTP Port number to connect to.

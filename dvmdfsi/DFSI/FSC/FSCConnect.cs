@@ -123,7 +123,7 @@ namespace dvmdfsi.DFSI.FSC
             if (data == null)
                 return;
 
-            Encode(ref data);
+            base.Encode(ref data);
 
             FneUtils.WriteBytes(VCBasePort, ref data, 3);                       // Voice Conveyance RTP Port
             FneUtils.WriteBytes(VCSSRC, ref data, 5);                           // Voice Conveyance SSRC

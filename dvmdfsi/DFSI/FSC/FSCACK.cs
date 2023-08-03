@@ -196,7 +196,7 @@ namespace dvmdfsi.DFSI.FSC
             if (data == null)
                 return;
 
-            Encode(ref data);
+            base.Encode(ref data);
 
             data[2U] = (byte)(AckMessageId);                                    // Ack Message ID
             data[3U] = (byte)ackVersion;                                        // Ack Message Version
