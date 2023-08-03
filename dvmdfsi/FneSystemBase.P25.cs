@@ -502,7 +502,7 @@ namespace dvmdfsi
         /// <summary>
         /// Helper to send DFSI start of stream.
         /// </summary>
-        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         private void Mot_DFSIStartOfStream()
         {
             if (!Program.Configuration.NoConnectionEstablishment)
@@ -523,7 +523,7 @@ namespace dvmdfsi
         /// <summary>
         /// Helper to send DFSI end of stream.
         /// </summary>
-        /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
+        /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         private void Mot_DFSIEndOfStream()
         {
             if (!Program.Configuration.NoConnectionEstablishment)
