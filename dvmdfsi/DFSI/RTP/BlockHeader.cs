@@ -44,14 +44,23 @@ namespace dvmdfsi.DFSI.RTP
     /// Implements a DFSI block header packet.
     /// </summary>
     /// 
+    /// Compact Form
     /// Byte 0
     /// Bit  0 1 2 3 4 5 6 7 
     ///     +-+-+-+-+-+-+-+-+
     ///     |E|      BT     |
     ///     +-+-+-+-+-+-+-+-+
+    /// 
+    /// Verbose Form
+    /// Byte 0                   1                   2                   3   
+    /// Bit  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+    ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ///     |E|      BT     |             TSO           |         BL        |
+    ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     public class BlockHeader
     {
-        public const int LENGTH = 4;
+        public const int LENGTH = 1;
+        public const int VERBOSE_LENGTH = 4;
 
         /// <summary>
         /// Payload type.
@@ -74,6 +83,24 @@ namespace dvmdfsi.DFSI.RTP
             set;
         }
 
+        /// <summary>
+        /// Timestamp Offset.
+        /// </summary>
+        public uint TimestampOffset
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Length of corresponding block.
+        /// </summary>
+        public uint BlockLength
+        {
+            get;
+            set;
+        }
+
         /*
         ** Methods
         */
@@ -89,23 +116,39 @@ namespace dvmdfsi.DFSI.RTP
         /// Initializes a new instance of the <see cref="BlockHeader"/> class.
         /// </summary>
         /// <param name="data"></param>
-        public BlockHeader(byte[] data) : this()
+        /// <param name="verbose"></param>
+        public BlockHeader(byte[] data, bool verbose = false) : this()
         {
-            Decode(data);
+            Decode(data, verbose);
         }
 
         /// <summary>
         /// Decode a block.
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="verbose"></param>
         /// <returns></returns>
-        public bool Decode(byte[] data)
+        public bool Decode(byte[] data, bool verbose = false)
         {
             if (data == null)
                 return false;
 
+            ulong value = 0U;
+
+            // combine bytes into ulong (8 byte) value
+            value = data[0U];
+            value = (value << 8) + data[1U];
+            value = (value << 8) + data[2U];
+            value = (value << 8) + data[3U];
+
             PayloadType = (data[0U] & 0x80) == 0x80;                            // Payload Type
             Type = (BlockType)(data[0U] & 0x7F);                                // Block Type
+
+            if (verbose)
+            {
+                TimestampOffset = (uint)((value >> 10) & 0x3FF);                // Timestamp Offset
+                BlockLength = (uint)(value & 0x3FF);                            // Block Length
+            }
 
             return true;
         }
@@ -114,13 +157,32 @@ namespace dvmdfsi.DFSI.RTP
         /// Encode a block.
         /// </summary>
         /// <param name="data"></param>
-        public void Encode(ref byte[] data)
+        /// <param name="verbose"></param>
+        public void Encode(ref byte[] data, bool verbose = false)
         {
             if (data == null)
                 return;
 
-            data[0U] = (byte)((PayloadType ? 0x80U : 0x00U) +                   // Payload Type
-                ((byte)Type & 0x7FU));                                          // Block Type
+            if (!verbose)
+            {
+                data[0U] = (byte)((PayloadType ? 0x80U : 0x00U) +               // Payload Type
+                    ((byte)Type & 0x7FU));                                      // Block Type
+            }
+            else
+            {
+                ulong value = 0;
+
+                value = (ulong)((PayloadType ? 0x80U : 0x00U) +                 // Payload Type
+                    ((byte)Type & 0x7FU));                                      // Block Type
+                value = (value << 24) + (ulong)(TimestampOffset & 0x3FFU);      // Timestamp Offset
+                value = (value << 10) + (ulong)(BlockLength & 0x3FFU);          // Block Length
+
+                // split ulong (8 byte) value into bytes
+                data[0U] = (byte)((value >> 24) & 0xFFU);
+                data[1U] = (byte)((value >> 16) & 0xFFU);
+                data[2U] = (byte)((value >> 8) & 0xFFU);
+                data[3U] = (byte)((value >> 0) & 0xFFU);
+            }
         }
     } // public class BlockHeader
 } // namespace dvmdfsi.DFSI.RTP
