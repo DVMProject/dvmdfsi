@@ -51,6 +51,8 @@ namespace dvmdfsi.FNE.P25
         public const uint P25_DFSI_LDU2_VOICE17_FRAME_LENGTH_BYTES = 17;
         public const uint P25_DFSI_LDU2_VOICE18_FRAME_LENGTH_BYTES = 16;
 
+        public const byte P25_DFSI_MOT_START_STOP = 0x00;    // Motorola Start/Stop Frame
+
         public const byte P25_DFSI_LDU1_VOICE1 = 0x62;       // IMBE LDU1 - Voice 1
         public const byte P25_DFSI_LDU1_VOICE2 = 0x63;       // IMBE LDU1 - Voice 2
         public const byte P25_DFSI_LDU1_VOICE3 = 0x64;       // IMBE LDU1 - Voice 3 + Link Control
