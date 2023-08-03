@@ -1,9 +1,9 @@
 ﻿/**
-* Digital Voice Modem - ISSI
+* Digital Voice Modem - DFSI
 * AGPLv3 Open Source. Use is subject to license terms.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
-* @package DVM / ISSI
+* @package DVM / DFSI
 *
 */
 /*
