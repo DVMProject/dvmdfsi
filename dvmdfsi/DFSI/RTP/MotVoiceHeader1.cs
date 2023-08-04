@@ -31,8 +31,8 @@ namespace dvmdfsi.DFSI.RTP
     /// Implements a P25 Motorola voice header frame 1.
     /// </summary>
     /// 
-    /// Byte 0                   1                   2                   3
-    /// Bit  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    /// Byte 0               1               2               3
+    /// Bit  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     ///     |   Encoded Motorola Start of Stream                            |
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -48,7 +48,7 @@ namespace dvmdfsi.DFSI.RTP
     ///     +                                                               +
     ///     |                                                               |
     ///     +               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    ///     |   Reserved    |
+    ///     |               |
     ///     +-+-+-+-+-+-+-+-+
     public class MotVoiceHeader1
     {

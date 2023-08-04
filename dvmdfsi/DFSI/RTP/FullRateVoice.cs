@@ -30,8 +30,8 @@ namespace dvmdfsi.DFSI.RTP
     /// Implements a P25 full rate voice packet.
     /// </summary>
     /// 
-    /// Byte 0                   1                   2                   3
-    /// Bit  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    /// Byte 0               1               2               3
+    /// Bit  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     ///     |       FT      |       U0(b11-0)       |      U1(b11-0)        |
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -48,8 +48,8 @@ namespace dvmdfsi.DFSI.RTP
     /// buffer ... difficult for the 8-bit aligned minded. The following is
     /// the layout with 8-bit aligned IMBE blocks instead of message vectors:
     ///
-    /// Byte 0                   1                   2                   3
-    /// Bit  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    /// Byte 0               1               2               3
+    /// Bit  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     ///     |       FT      |    IMBE 1     |    IMBE 2     |    IMBE 3     |
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
