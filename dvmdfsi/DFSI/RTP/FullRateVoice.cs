@@ -42,6 +42,24 @@ namespace dvmdfsi.DFSI.RTP
     ///     |  Et | Er  |M|L|E|  E1 |SF | B |
     ///     |     |     | | |4|     |   |   |
     ///     +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+    ///
+    /// Because the TIA.102-BAHA spec represents the "message vectors" as 
+    /// 16-bit units (U0 - U7) this makes understanding the layout of the 
+    /// buffer ... difficult for the 8-bit aligned minded. The following is
+    /// the layout with 8-bit aligned IMBE blocks instead of message vectors:
+    ///
+    /// Byte 0                   1                   2                   3
+    /// Bit  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ///     |       FT      |    IMBE 1     |    IMBE 2     |    IMBE 3     |
+    ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ///     |    IMBE 4     |    IMBE 5     |    IMBE 6     |    IMBE 7     |
+    ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ///     |    IMBE 8     |    IMBE 9     |    IMBE 10    |    IMBE 11    |
+    ///     +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+    ///     |  Et | Er  |M|L|E|  E1 |SF | B |
+    ///     |     |     | | |4|     |   |   |
+    ///     +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
     public class FullRateVoice
     {
         public const int LENGTH = 14;
