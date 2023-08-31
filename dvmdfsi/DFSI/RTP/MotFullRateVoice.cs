@@ -22,7 +22,7 @@
 
 using System;
 
-using dvmdfsi.FNE.P25;
+using fnecore.P25;
 
 namespace dvmdfsi.DFSI.RTP
 {

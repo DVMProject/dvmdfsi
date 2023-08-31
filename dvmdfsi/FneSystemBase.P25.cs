@@ -28,8 +28,8 @@ using System.Threading.Tasks;
 
 using Serilog;
 
-using dvmdfsi.FNE;
-using dvmdfsi.FNE.P25;
+using fnecore;
+using fnecore.P25;
 
 using dvmdfsi.DFSI;
 using dvmdfsi.DFSI.RTP;
@@ -69,8 +69,9 @@ namespace dvmdfsi
         /// <param name="duid">P25 DUID</param>
         /// <param name="frameType">Frame Type</param>
         /// <param name="streamId">Stream ID</param>
+        /// <param name="message">Raw message data</param>
         /// <returns>True, if data stream is valid, otherwise false.</returns>
-        protected virtual bool P25DataValidate(uint peerId, uint srcId, uint dstId, CallType callType, P25DUID duid, FrameType frameType, uint streamId)
+        protected virtual bool P25DataValidate(uint peerId, uint srcId, uint dstId, CallType callType, P25DUID duid, FrameType frameType, uint streamId, byte[] message)
         {
             return true;
         }

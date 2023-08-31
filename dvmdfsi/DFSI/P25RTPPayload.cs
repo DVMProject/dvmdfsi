@@ -25,7 +25,7 @@ using System.Collections.Generic;
 
 using Serilog;
 
-using dvmdfsi.FNE.P25;
+using fnecore.P25;
 using dvmdfsi.DFSI.RTP;
 
 namespace dvmdfsi.DFSI

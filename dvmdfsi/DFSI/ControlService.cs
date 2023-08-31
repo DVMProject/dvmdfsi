@@ -31,7 +31,7 @@ using System.Text;
 
 using Serilog;
 
-using dvmdfsi.FNE;
+using fnecore;
 
 using dvmdfsi.DFSI.FSC;
 

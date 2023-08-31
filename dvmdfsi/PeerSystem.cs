@@ -27,7 +27,7 @@ using System.Text;
 
 using Serilog;
 
-using dvmdfsi.FNE;
+using fnecore;
 
 namespace dvmdfsi
 {

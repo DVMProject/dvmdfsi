@@ -23,7 +23,7 @@
 using System;
 using System.Collections.Generic;
 
-using dvmdfsi.FNE;
+using fnecore;
 
 namespace dvmdfsi
 {

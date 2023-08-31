@@ -27,6 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\fnecore\fnecore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="config.example.yml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -28,9 +28,9 @@ using System.Threading.Tasks;
 
 using Serilog;
 
-using dvmdfsi.FNE;
-using dvmdfsi.FNE.DMR;
-using dvmdfsi.FNE.P25;
+using fnecore;
+using fnecore.DMR;
+using fnecore.P25;
 
 using dvmdfsi.DFSI;
 using dvmdfsi.DFSI.FSC;

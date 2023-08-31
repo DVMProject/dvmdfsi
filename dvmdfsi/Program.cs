@@ -35,8 +35,8 @@ using Serilog.Extensions.Logging;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-using FneLogLevel = dvmdfsi.FNE.LogLevel;
-using dvmdfsi.FNE.Utility;
+using FneLogLevel = fnecore.LogLevel;
+using fnecore.Utility;
 
 namespace dvmdfsi
 {

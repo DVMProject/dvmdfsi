@@ -28,8 +28,8 @@ using System.Threading;
 
 using Serilog;
 
-using dvmdfsi.FNE;
-using dvmdfsi.FNE.DMR;
+using fnecore;
+using fnecore.DMR;
 
 namespace dvmdfsi
 {
@@ -53,8 +53,9 @@ namespace dvmdfsi
         /// <param name="frameType">Frame Type</param>
         /// <param name="dataType">DMR Data Type</param>
         /// <param name="streamId">Stream ID</param>
+        /// <param name="message">Raw message data</param>
         /// <returns>True, if data stream is valid, otherwise false.</returns>
-        protected virtual bool DMRDataValidate(uint peerId, uint srcId, uint dstId, byte slot, CallType callType, FrameType frameType, DMRDataType dataType, uint streamId)
+        protected virtual bool DMRDataValidate(uint peerId, uint srcId, uint dstId, byte slot, CallType callType, FrameType frameType, DMRDataType dataType, uint streamId, byte[] message)
         {
             return true;
         }
