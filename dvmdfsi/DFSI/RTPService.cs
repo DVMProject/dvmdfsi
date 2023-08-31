@@ -239,8 +239,8 @@ namespace dvmdfsi.DFSI
             FneUtils.Memset(buffer, 0, buffer.Length);
 
             RtpHeader header = new RtpHeader();
-            header.Extension = true;
-            header.PayloadType = Constants.DVMRtpPayloadType;
+            header.Extension = false;
+            header.PayloadType = P25DFSI.P25_RTP_PAYLOAD_TYPE;
             header.Sequence = pktSeq;
             header.SSRC = Program.Configuration.PeerId;
 
