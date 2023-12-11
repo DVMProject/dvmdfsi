@@ -827,8 +827,8 @@ namespace dvmdfsi
                                     {
                                         voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                                         voice.AdditionalFrameData[0] = rs[9];       // RS (24,12,13)
-                                        voice.AdditionalFrameData[0] = rs[10];      // RS (24,12,13)
-                                        voice.AdditionalFrameData[0] = rs[11];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[1] = rs[10];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[2] = rs[11];      // RS (24,12,13)
                                     }
                                     break;
                                 case P25DUID.LDU2:
@@ -852,16 +852,16 @@ namespace dvmdfsi
                                     {
                                         voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                                         voice.AdditionalFrameData[0] = rs[12];      // RS (24,12,13)
-                                        voice.AdditionalFrameData[0] = rs[13];      // RS (24,12,13)
-                                        voice.AdditionalFrameData[0] = rs[14];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[1] = rs[13];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[2] = rs[14];      // RS (24,12,13)
                                     }
                                     break;
                                 case P25DUID.LDU2:
                                     {
                                         voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                                         voice.AdditionalFrameData[0] = rs[12];      // RS (24,16,9)
-                                        voice.AdditionalFrameData[0] = rs[13];      // RS (24,16,9)
-                                        voice.AdditionalFrameData[0] = rs[14];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[1] = rs[13];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[2] = rs[14];      // RS (24,16,9)
                                     }
                                     break;
                             }
@@ -877,16 +877,16 @@ namespace dvmdfsi
                                     {
                                         voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                                         voice.AdditionalFrameData[0] = rs[15];      // RS (24,12,13)
-                                        voice.AdditionalFrameData[0] = rs[16];      // RS (24,12,13)
-                                        voice.AdditionalFrameData[0] = rs[17];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[1] = rs[16];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[2] = rs[17];      // RS (24,12,13)
                                     }
                                     break;
                                 case P25DUID.LDU2:
                                     {
                                         voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                                         voice.AdditionalFrameData[0] = rs[15];      // RS (24,16,9)
-                                        voice.AdditionalFrameData[0] = rs[16];      // RS (24,16,9)
-                                        voice.AdditionalFrameData[0] = rs[17];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[1] = rs[16];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[2] = rs[17];      // RS (24,16,9)
                                     }
                                     break;
                             }
