@@ -78,6 +78,7 @@ namespace dvmdfsi.DFSI.RTP
         public MotVoiceHeader2()
         {
             TGID = 0;
+            Source = 0x02;
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="MotVoiceHeader2"/> class.

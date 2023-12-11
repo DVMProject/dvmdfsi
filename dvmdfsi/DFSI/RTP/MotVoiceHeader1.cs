@@ -111,6 +111,7 @@ namespace dvmdfsi.DFSI.RTP
             ICW = 0;
             RSSI = 0;
             RSSIValidity = RSSIValidityFlag.INVALID;
+            Source = 0x02;
 
             StartOfStream = null;
         }

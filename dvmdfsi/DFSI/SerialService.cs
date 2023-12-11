@@ -132,7 +132,7 @@ namespace dvmdfsi.DFSI
 
                 Array.Copy(message, 0, buffer, 4, message.Length);
 
-                Log.Logger.Debug($"({Program.Configuration.Name}) sending {buffer.Length}-byte message to serial port");
+                Log.Logger.Verbose($"({Program.Configuration.Name}) sending {buffer.Length}-byte message to serial port");
                 Log.Logger.Verbose($"{BitConverter.ToString(buffer).Replace("-"," ")}");
 
                 port.Write(buffer, 0, buffer.Length);
@@ -230,7 +230,7 @@ namespace dvmdfsi.DFSI
                 var msg = new byte[length - 3];
                 Array.Copy(rxBuffer, 3, msg, 0, length - 3);
 
-                Log.Logger.Debug($"({Program.Configuration.Name}) got {length}-byte message from serial");
+                Log.Logger.Verbose($"({Program.Configuration.Name}) got {length}-byte message from serial");
                 Log.Logger.Verbose($"{FneUtils.HexDump(rxBuffer, 0)}");
 
                 // switch on command

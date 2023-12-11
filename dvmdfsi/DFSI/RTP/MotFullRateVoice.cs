@@ -98,7 +98,7 @@ namespace dvmdfsi.DFSI.RTP
         {
             FrameType = P25DFSI.P25_DFSI_LDU1_VOICE1;
             AdditionalFrameData = null;
-            Source = 0;
+            Source = 0x02;
 
             IMBE = new byte[IMBE_BUF_LEN];
         }
@@ -127,6 +127,10 @@ namespace dvmdfsi.DFSI.RTP
                 length += SHORTENED_LENGTH;
             else
                 length += LENGTH;
+
+            // 0x63 and 0x6C are 1 byte shorter than they should be, we think (the sheet says they should be 13 but Juan's captures are 14)
+            if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE2 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE11)
+                length += 1;
             
             // these ones are the weird ones
             if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE9 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE18)
