@@ -594,6 +594,19 @@ namespace dvmdfsi
             MotVoiceHeader2 vhdr2 = new MotVoiceHeader2();
             vhdr2.TGID = (ushort)dstId;
 
+            byte[] rs = new byte[27];
+            rs[9U] = P25Defines.P25_MFG_STANDARD;                                           // Mfg Id.
+            rs[10U] = P25Defines.P25_ALGO_UNENCRYPT;                                        // Algorithm ID
+            rs[11U] = 0x00;                                                                 // Key ID
+            rs[12U] = 0x00;                                                                 // ...
+            rs[13U] = (byte)((dstId >> 8) & 0xFFU);                                         // Talkgroup Address
+            rs[14U] = (byte)((dstId >> 0) & 0xFFU);                                         // ...
+
+            rs = ReedSolomonAlgorithm.Encode(rs, ErrorCorrectionCodeType.ReedSolomon_634717);
+
+            vhdr2.AdditionalFrameData = new byte[MotVoiceHeader2.ADDTL_LENGTH];
+            Buffer.BlockCopy(rs, 15, vhdr2.AdditionalFrameData, 0, 12);
+
             byte[] buffer = new byte[MotVoiceHeader2.LENGTH];
             vhdr2.Encode(ref buffer);
             Log.Logger.Debug($"({Program.Configuration.Name}) encoded mot VHDR2 p25 frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
