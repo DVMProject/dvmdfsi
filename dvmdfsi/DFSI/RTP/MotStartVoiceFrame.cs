@@ -24,6 +24,7 @@ using System;
 
 using fnecore;
 using fnecore.P25;
+using Serilog;
 
 namespace dvmdfsi.DFSI.RTP
 {
@@ -149,6 +150,8 @@ namespace dvmdfsi.DFSI.RTP
             if (data == null)
                 return false;
 
+            Log.Logger.Debug($"({Program.Configuration.Name}) decoding Mot voice start frame {BitConverter.ToString(data).Replace("-"," ")}");
+
             // decode start of stream data
             StartOfStream = new MotStartOfStream();
             {
@@ -162,7 +165,7 @@ namespace dvmdfsi.DFSI.RTP
             {
                 byte[] buffer = new byte[MotFullRateVoice.SHORTENED_LENGTH];
                 buffer[0U] = data[0U];
-                Buffer.BlockCopy(data, 10, buffer, 1, MotFullRateVoice.SHORTENED_LENGTH - 1);
+                Buffer.BlockCopy(data, 10, buffer, 1, MotFullRateVoice.SHORTENED_LENGTH - 2);
                 FullRateVoice.Decode(buffer, true);
             }
 
@@ -201,7 +204,7 @@ namespace dvmdfsi.DFSI.RTP
                 byte[] buffer = new byte[MotFullRateVoice.SHORTENED_LENGTH];
                 FullRateVoice.Encode(ref buffer, true);
                 data[0U] = FullRateVoice.FrameType;
-                Buffer.BlockCopy(buffer, 1, data, 10, MotFullRateVoice.SHORTENED_LENGTH - 1);
+                Buffer.BlockCopy(buffer, 1, data, 10, MotFullRateVoice.SHORTENED_LENGTH - 2);
             }
 
             data[5U] = ICW;                                                     // ICW Flag ?

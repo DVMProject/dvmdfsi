@@ -35,6 +35,7 @@ using fnecore.P25;
 using dvmdfsi.DFSI;
 using dvmdfsi.DFSI.FSC;
 using dvmdfsi.DFSI.RTP;
+using System.Diagnostics.Tracing;
 
 namespace dvmdfsi
 {
@@ -131,6 +132,7 @@ namespace dvmdfsi
 
         private ControlService dfsiControl;
         private RTPService dfsiRTP;
+        private SerialService dfsiSerial;
 
         /*
         ** Properties
@@ -244,12 +246,37 @@ namespace dvmdfsi
             netLDU1 = new byte[9 * 25];
             netLDU2 = new byte[9 * 25];
 
-            this.dfsiControl = new ControlService();
-            this.dfsiRTP = new RTPService();
-            if (!Program.Configuration.TheManufacturer)
-                this.dfsiRTP.RTPFrameHandler += TIA_DfsiRTP_RTPFrameHandler;
-            else
-                this.dfsiRTP.RTPFrameHandler += Mot_DfsiRTP_RTPFrameHandler;
+            // Mode switch for DFSI handling
+            switch (Program.Configuration.Mode)
+            {
+                case DFSIMode.None:
+                    Log.Logger.Error("No DFSI mode specified!");
+                    break;
+                // UDP DFSI to DVM FNE
+                case DFSIMode.UdpDvm:
+                    this.dfsiControl = new ControlService();
+                    this.dfsiRTP = new RTPService();
+                    if (!Program.Configuration.TheManufacturer)
+                        this.dfsiRTP.RTPFrameHandler += TIA_DfsiRTP_RTPFrameHandler;
+                    else
+                        this.dfsiRTP.RTPFrameHandler += Mot_DfsiRTP_RTPFrameHandler;
+                    break;
+                // Serial DFSI to DVM FNE
+                case DFSIMode.SerialDvm:
+                    this.dfsiSerial = new SerialService(Program.Configuration.SerialPortName, Program.Configuration.SerialBaudrate);
+                    if (!Program.Configuration.TheManufacturer)
+                        this.dfsiSerial.RTPFrameHandler += TIA_DfsiRTP_RTPFrameHandler;
+                    else
+                        this.dfsiSerial.RTPFrameHandler += Mot_DfsiRTP_RTPFrameHandler;
+                    break;
+                // Serial DFSI to UDP DFSI (TODO: Implement this lol)
+                case DFSIMode.SerialUdp:
+                    Log.Logger.Error("Serial DFSI to UDP DFSI not yet implemented!");
+                    break;
+                default:
+                    Log.Logger.Error($"Unknown DFSI mode specified: {Program.Configuration.Mode}");
+                    break;
+            }
         }
 
         /// <summary>
@@ -282,6 +309,7 @@ namespace dvmdfsi
                 else
                 {
                     Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL END       * [STREAM ID {txStreamId}]");
+                    SendP25TDU(remoteCallData);
                     txStreamId = 0;
                     remoteCallInProgress = false;
                     remoteCallData.Reset();
@@ -510,10 +538,16 @@ namespace dvmdfsi
                     CreateP25LDU2Message(ref buffer, remoteCallData);
 
                     peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), buffer, pktSeq, txStreamId);
+
+                    // Reset the p25N counter to start the next LDU
+                    p25N = 0;
+                }
+                else
+                {
+                    p25N++;
                 }
 
                 p25SeqNo++;
-                p25N++;
             }
         }
 
@@ -786,6 +820,22 @@ namespace dvmdfsi
             if (!fne.IsStarted)
                 fne.Start();
 
+            switch (Program.Configuration.Mode)
+            {
+                case DFSIMode.UdpDvm:
+                    StartUdpDvm();
+                    break;
+                case DFSIMode.SerialDvm:
+                    StartSerialDvm();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Starts UDP DFSI to DVM FNE processes
+        /// </summary>
+        public void StartUdpDvm()
+        {
             if (!Program.Configuration.NoConnectionEstablishment)
             {
                 if (!dfsiControl.IsStarted)
@@ -794,6 +844,14 @@ namespace dvmdfsi
                 dfsiControl.ConnectResponse += DfsiControl_ConnectResponse;
 
                 ConnectDFSI();
+            }
+        }
+
+        public void StartSerialDvm()
+        {
+            if (!dfsiSerial.IsStarted)
+            {
+                dfsiSerial.Start();
             }
         }
 
@@ -828,14 +886,23 @@ namespace dvmdfsi
             if (fne.IsStarted)
                 fne.Stop();
 
-            if (dfsiControl.IsStarted)
+            if (dfsiControl != null)
             {
-                dfsiControl.SendRemote(new FSCDisconnect());
-                dfsiControl.Stop();
-            }
+                if (dfsiControl.IsStarted)
+                {
+                    dfsiControl.SendRemote(new FSCDisconnect());
+                    dfsiControl.Stop();
+                }
 
-            if (dfsiRTP.IsStarted)
-                dfsiRTP.Stop();
+                if (dfsiRTP.IsStarted)
+                    dfsiRTP.Stop();
+            }
+            
+            if (dfsiSerial != null)
+            {
+                if (dfsiSerial.IsStarted)
+                    dfsiSerial.Stop();
+            }
         }
 
         /// <summary>

@@ -506,7 +506,7 @@ namespace dvmdfsi
         /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         private void Mot_DFSIStartOfStream()
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -514,11 +514,16 @@ namespace dvmdfsi
 
             MotStartOfStream start = new MotStartOfStream();
             start.StartStop = StartStopFlag.START;
+            start.RT = RTFlag.ENABLED;    // TODO: make this selectable
 
             byte[] buffer = new byte[MotStartOfStream.LENGTH];
             start.Encode(ref buffer);
+            Log.Logger.Debug($"({Program.Configuration.Name}) encoded mot p25 start frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
 
-            dfsiRTP.SendRemote(buffer);
+            if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                dfsiRTP.SendRemote(buffer);
+            else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                dfsiSerial.Send(buffer);
         }
 
         /// <summary>
@@ -527,7 +532,7 @@ namespace dvmdfsi
         /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         private void Mot_DFSIEndOfStream()
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -538,8 +543,12 @@ namespace dvmdfsi
 
             byte[] buffer = new byte[MotStartOfStream.LENGTH];
             start.Encode(ref buffer);
+            Log.Logger.Debug($"({Program.Configuration.Name}) encoded mot p25 end frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
 
-            dfsiRTP.SendRemote(buffer);
+            if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                dfsiRTP.SendRemote(buffer);
+            else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                dfsiSerial.Send(buffer);
         }
 
         /// <summary>
@@ -548,7 +557,7 @@ namespace dvmdfsi
         /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         private void Mot_DFSIVoiceHeader1()
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -557,11 +566,16 @@ namespace dvmdfsi
             MotVoiceHeader1 vhdr1 = new MotVoiceHeader1();
             vhdr1.StartOfStream = new MotStartOfStream();
             vhdr1.StartOfStream.StartStop = StartStopFlag.START;
+            vhdr1.StartOfStream.RT = RTFlag.ENABLED;    // TODO: make this selectable
 
             byte[] buffer = new byte[MotVoiceHeader1.LENGTH];
             vhdr1.Encode(ref buffer);
+            Log.Logger.Debug($"({Program.Configuration.Name}) encoded mot VHDR1 p25 frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
 
-            dfsiRTP.SendRemote(buffer);
+            if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                dfsiRTP.SendRemote(buffer);
+            else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                dfsiSerial.Send(buffer);
         }
 
         /// <summary>
@@ -570,7 +584,7 @@ namespace dvmdfsi
         /// <remarks>This implements "the" manufacturer standard DFSI RTP frame handling.</remarks>
         private void Mot_DFSIVoiceHeader2(uint dstId)
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -581,8 +595,12 @@ namespace dvmdfsi
 
             byte[] buffer = new byte[MotVoiceHeader2.LENGTH];
             vhdr2.Encode(ref buffer);
+            Log.Logger.Debug($"({Program.Configuration.Name}) encoded mot VHDR2 p25 frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
 
-            dfsiRTP.SendRemote(buffer);
+            if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                dfsiRTP.SendRemote(buffer);
+            else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                dfsiSerial.Send(buffer);
         }
 
         /// <summary>
@@ -591,7 +609,7 @@ namespace dvmdfsi
         /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
         private void TIA_DFSIStartOfStream()
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -608,8 +626,12 @@ namespace dvmdfsi
 
             byte[] buffer = new byte[payload.CalculateSize()];
             payload.Encode(ref buffer);
+            Log.Logger.Debug($"({Program.Configuration.Name}) encoded TIA p25 start frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
 
-            dfsiRTP.SendRemote(buffer);
+            if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                dfsiRTP.SendRemote(buffer);
+            else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                dfsiSerial.Send(buffer);
         }
 
         /// <summary>
@@ -618,7 +640,7 @@ namespace dvmdfsi
         /// <remarks>This implements TIA-102.BAHA standard DFSI RTP frame handling.</remarks>
         private void TIA_DFSIEndOfStream()
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -633,8 +655,12 @@ namespace dvmdfsi
 
             byte[] buffer = new byte[payload.CalculateSize()];
             payload.Encode(ref buffer);
+            Log.Logger.Debug($"({Program.Configuration.Name}) encoded TIA p25 end frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
 
-            dfsiRTP.SendRemote(buffer);
+            if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                dfsiRTP.SendRemote(buffer);
+            else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                dfsiSerial.Send(buffer);
         }
 
         /// <summary>
@@ -646,7 +672,7 @@ namespace dvmdfsi
         /// <param name="e"></param>
         private void Mot_DFSISendFrame(P25DUID duid, byte[] ldu, P25DataReceivedEvent e)
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -662,10 +688,13 @@ namespace dvmdfsi
                 {
                     case 0:     // VOICE1 / 10
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE1 : P25DFSI.P25_DFSI_LDU2_VOICE10;
                             MotStartVoiceFrame startVoice = new MotStartVoiceFrame();
                             startVoice.StartOfStream = new MotStartOfStream();
                             startVoice.StartOfStream.StartStop = StartStopFlag.START;
+                            startVoice.StartOfStream.RT = RTFlag.ENABLED;   // TODO: make this selectable
                             startVoice.FullRateVoice = new MotFullRateVoice();
+                            startVoice.FullRateVoice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE1 : P25DFSI.P25_DFSI_LDU2_VOICE10;
                             Buffer.BlockCopy(ldu, 10, startVoice.FullRateVoice.IMBE, 0, IMBE_BUF_LEN);
 
                             buffer = new byte[MotStartVoiceFrame.LENGTH];
@@ -673,10 +702,14 @@ namespace dvmdfsi
                         }
                         break;
                     case 1:     // VOICE2 / 11
-                        Buffer.BlockCopy(ldu, 26, voice.IMBE, 0, IMBE_BUF_LEN);
+                        {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE2 : P25DFSI.P25_DFSI_LDU2_VOICE11;
+                            Buffer.BlockCopy(ldu, 26, voice.IMBE, 0, IMBE_BUF_LEN);
+                        }
                         break;
                     case 2:     // VOICE3 / 12
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE3 : P25DFSI.P25_DFSI_LDU2_VOICE12;
                             Buffer.BlockCopy(ldu, 55, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                             switch (duid)
@@ -701,6 +734,7 @@ namespace dvmdfsi
                         break;
                     case 3:     // VOICE4 / 13
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE4 : P25DFSI.P25_DFSI_LDU2_VOICE13;
                             Buffer.BlockCopy(ldu, 80, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                             switch (duid)
@@ -725,6 +759,7 @@ namespace dvmdfsi
                         break;
                     case 4:     // VOICE5 / 14
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE5 : P25DFSI.P25_DFSI_LDU2_VOICE14;
                             Buffer.BlockCopy(ldu, 105, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                             switch (duid)
@@ -749,6 +784,7 @@ namespace dvmdfsi
                         break;
                     case 5:     // VOICE6 / 15
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE6 : P25DFSI.P25_DFSI_LDU2_VOICE15;
                             Buffer.BlockCopy(ldu, 130, voice.IMBE, 0, IMBE_BUF_LEN);
                             switch (duid)
                             {
@@ -764,13 +800,20 @@ namespace dvmdfsi
                         }
                         break;
                     case 6:     // VOICE7 / 16
-                        Buffer.BlockCopy(ldu, 155, voice.IMBE, 0, IMBE_BUF_LEN);
+                        {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE7 : P25DFSI.P25_DFSI_LDU2_VOICE16;
+                            Buffer.BlockCopy(ldu, 155, voice.IMBE, 0, IMBE_BUF_LEN);
+                        }
                         break;
                     case 7:     // VOICE8 / 17
-                        Buffer.BlockCopy(ldu, 180, voice.IMBE, 0, IMBE_BUF_LEN);
+                        {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE8 : P25DFSI.P25_DFSI_LDU2_VOICE17;
+                            Buffer.BlockCopy(ldu, 180, voice.IMBE, 0, IMBE_BUF_LEN);
+                        }
                         break;
                     case 8:     // VOICE9 / 18
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE9 : P25DFSI.P25_DFSI_LDU2_VOICE18;
                             Buffer.BlockCopy(ldu, 204, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
                             voice.AdditionalFrameData[0] = e.Data[20U];             // LSD 1
@@ -785,8 +828,13 @@ namespace dvmdfsi
                     voice.Encode(ref buffer);
                 }
 
+                Log.Logger.Debug($"({Program.Configuration.Name}) encoded mot p25 voice frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
+
                 if (buffer != null)
-                    dfsiRTP.SendRemote(buffer);
+                    if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                        dfsiRTP.SendRemote(buffer);
+                    else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                        dfsiSerial.Send(buffer);
             }
         }
 
@@ -799,7 +847,7 @@ namespace dvmdfsi
         /// <param name="e"></param>
         private void TIA_DFSISendFrame(P25DUID duid, byte[] ldu, P25DataReceivedEvent e)
         {
-            if (!Program.Configuration.NoConnectionEstablishment)
+            if (!Program.Configuration.NoConnectionEstablishment && Program.Configuration.Mode == DFSIMode.UdpDvm)
             {
                 if (!dfsiControl.IsConnected)
                     return;
@@ -934,8 +982,12 @@ namespace dvmdfsi
 
                 byte[] buffer = new byte[payload.CalculateSize()];
                 payload.Encode(ref buffer);
+                Log.Logger.Debug($"({Program.Configuration.Name}) encoded TIA p25 frame ({buffer.Length}) {BitConverter.ToString(buffer).Replace("-", " ")}");
 
-                dfsiRTP.SendRemote(buffer);
+                if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                    dfsiRTP.SendRemote(buffer);
+                else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
+                    dfsiSerial.Send(buffer);
             }
         }
 
@@ -976,7 +1028,8 @@ namespace dvmdfsi
                     callInProgress = true;
                     RxStart = pktTime;
                     Log.Logger.Information($"({SystemName}) P25D: Traffic *CALL START     * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
-                    dfsiRTP.pktSeq(true);
+                    if (Program.Configuration.Mode == DFSIMode.UdpDvm)
+                        dfsiRTP.pktSeq(true);
                     if (Program.Configuration.TheManufacturer)
                     {
                         Mot_DFSIStartOfStream();

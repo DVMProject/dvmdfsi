@@ -64,3 +64,4 @@ package/
 .vs
 launchSettings.json
 /dvmbridge/Properties/launchSettings.json
+config.yml

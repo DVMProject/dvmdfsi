@@ -90,6 +90,15 @@ namespace dvmdfsi.DFSI.RTP
             set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public byte Source
+        {
+            get;
+            set;
+        }
+
         /*
         ** Methods
         */
@@ -164,6 +173,11 @@ namespace dvmdfsi.DFSI.RTP
             data[6U] = RSSI;                                                    // RSSI
             data[7U] = (byte)RSSIValidity;                                      // RSSI Validity
             data[8U] = RSSI;                                                    // RSSI
+
+            // These bytes are required but we're not sure why
+            data[23U] = 0x08;
+            data[MotVoiceHeader1.LENGTH - 2] = Source;
+            data[MotVoiceHeader1.LENGTH - 1] = 0x02;
         }
     } // public class MotVoiceHeader1
 } // namespace dvmdfsi.DFSI.RTP

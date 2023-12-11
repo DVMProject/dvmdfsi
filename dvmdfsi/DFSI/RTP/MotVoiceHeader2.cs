@@ -59,6 +59,15 @@ namespace dvmdfsi.DFSI.RTP
             set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public byte Source
+        {
+            get;
+            set;
+        }
+
         /*
         ** Methods
         */
@@ -103,8 +112,11 @@ namespace dvmdfsi.DFSI.RTP
             if (data == null)
                 return;
 
-            data[0U] = P25DFSI.P25_DFSI_MOT_VHDR_1;
+            data[0U] = P25DFSI.P25_DFSI_MOT_VHDR_2;
             FneUtils.WriteBytes(TGID, ref data, 1);
+
+            // End in 0x02
+            data[MotVoiceHeader2.LENGTH - 1] = Source;
         }
     } // public class MotVoiceHeader2
 } // namespace dvmdfsi.DFSI.RTP

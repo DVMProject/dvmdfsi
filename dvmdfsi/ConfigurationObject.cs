@@ -51,6 +51,17 @@ namespace dvmdfsi
     } // public class ConfigLogObject
 
     /// <summary>
+    /// Enum for valid DVMDFSI modes
+    /// </summary>
+    public enum DFSIMode
+    {
+        None = 0,
+        UdpDvm = 1,
+        SerialDvm = 2,
+        SerialUdp = 3
+    }
+
+    /// <summary>
     /// 
     /// </summary>
     public class ConfigurationObject
@@ -69,6 +80,11 @@ namespace dvmdfsi
         /// 
         /// </summary>
         public bool RawPacketTrace = false;
+
+        /// <summary>
+        /// Mode for DFSI translation (1 - UDP DFSI to DVM FNE, 2 - Serial DFSI to DVM FNE, 3 - Serial DFSI to UDP DFSI)
+        /// </summary>
+        public DFSIMode Mode = 0;
 
         /// <summary>
         /// 
@@ -125,6 +141,14 @@ namespace dvmdfsi
         /// 
         /// </summary>
         public int RemoteRtpPort = 27500;
+        /// <summary>
+        /// 
+        /// </summary>
+        public string SerialPortName = "";
+        /// <summary>
+        /// 
+        /// </summary>
+        public int SerialBaudrate = 0;
 
         /*
         ** Methods

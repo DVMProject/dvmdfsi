@@ -9,6 +9,12 @@ pingTime: 5
 # Flag indicating whether or not the router should debug display all packets received.
 rawPacketTrace: false
 
+# Mode
+#   1 - UDP DFSI to DVM FNE
+#   2 - Serial DFSI to DVM FNE
+#   3 - Serial DFSI to UDP DFSI
+mode: 2
+
 # Textual Name
 name: DFSI
 # Network Peer ID
@@ -36,6 +42,10 @@ remoteDfsiAddress: 127.0.0.2
 remoteControlPort: 27000
 # Remote DFSI RTP Port number to connect to.
 remoteRtpPort: 27500
+
+# Serial configuration for serial DFSI
+serialPortName: "COM26"
+serialBaudrate: 115200
 
 #
 # Logging Configuration

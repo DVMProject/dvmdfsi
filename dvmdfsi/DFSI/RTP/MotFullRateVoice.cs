@@ -21,6 +21,7 @@
 */
 
 using System;
+using Serilog;
 
 using fnecore.P25;
 
@@ -46,7 +47,7 @@ namespace dvmdfsi.DFSI.RTP
     public class MotFullRateVoice
     {
         public const int LENGTH = 17;
-        public const int SHORTENED_LENGTH = 14;
+        public const int SHORTENED_LENGTH = 13;
         public const int ADDTL_LENGTH = 4;
         private const int IMBE_BUF_LEN = 11;
 
@@ -116,16 +117,22 @@ namespace dvmdfsi.DFSI.RTP
         /// <returns></returns>
         public int Size()
         {
-            if (AdditionalFrameData != null)
-                return LENGTH + AdditionalFrameData.Length;
-            else
-            {
-                if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE1 ||  FrameType == P25DFSI.P25_DFSI_LDU1_VOICE2 ||
-                    FrameType == P25DFSI.P25_DFSI_LDU2_VOICE10 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE11)
-                    return SHORTENED_LENGTH;
-            }
+            int length = 0;
+            
+            //if (AdditionalFrameData != null)
+            //    length += AdditionalFrameData.Length;
 
-            return LENGTH;
+            if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE1 ||  FrameType == P25DFSI.P25_DFSI_LDU1_VOICE2 ||
+                FrameType == P25DFSI.P25_DFSI_LDU2_VOICE10 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE11)
+                length += SHORTENED_LENGTH;
+            else
+                length += LENGTH;
+            
+            // these ones are the weird ones
+            if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE9 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE18)
+                length -= 1;
+
+            return length;
         }
 
         /// <summary>
@@ -138,6 +145,8 @@ namespace dvmdfsi.DFSI.RTP
         {
             if (data == null)
                 return false;
+
+            Log.Logger.Debug($"({Program.Configuration.Name}) decoding {(shortened ? "shortened " : "")}Mot voice frame {BitConverter.ToString(data).Replace("-"," ")}");
 
             IMBE = new byte[IMBE_BUF_LEN];
 
@@ -154,13 +163,20 @@ namespace dvmdfsi.DFSI.RTP
             }
             else
             {
+                // Frames 0x6A and 0x73 are missing the 0x00 padding byte, so we start IMBE data 1 byte earlier
+                uint IMBEStart = 5U;
+                if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE9 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE18)
+                {
+                    IMBEStart = 4U;
+                }
+
                 AdditionalFrameData = new byte[4];
                 Buffer.BlockCopy(data, 1, AdditionalFrameData, 0, AdditionalFrameData.Length);
 
                 for (int i = 0; i < IMBE_BUF_LEN; i++)
-                    IMBE[i] = data[i + 5U];                                     // IMBE
+                    IMBE[i] = data[i + IMBEStart];                                     // IMBE
 
-                Source = data[16U];
+                Source = data[11 + IMBEStart];
             }
 
             return true;
@@ -189,6 +205,13 @@ namespace dvmdfsi.DFSI.RTP
             }
             else
             {
+                // Frames 0x6A and 0x73 are missing the 0x00 padding byte, so we start IMBE data 1 byte earlier
+                uint IMBEStart = 5U;
+                if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE9 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE18)
+                {
+                    IMBEStart = 4U;
+                }
+
                 if (AdditionalFrameData != null)
                 {
                     if (AdditionalFrameData.Length >= 4)
@@ -196,9 +219,9 @@ namespace dvmdfsi.DFSI.RTP
                 }
 
                 for (int i = 0; i < IMBE_BUF_LEN; i++)
-                    data[i + 5U] = IMBE[i];                                     // IMBE
+                    data[i + IMBEStart] = IMBE[i];                                     // IMBE
 
-                data[16U] = Source;
+                data[11 + IMBEStart] = Source;
             }
         }
     } // public class MotFullRateVoice
