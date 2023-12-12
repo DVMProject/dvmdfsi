@@ -115,7 +115,7 @@ namespace dvmdfsi.DFSI.RTP
 
             AdditionalFrameData = new byte[ADDTL_LENGTH];
             for (int i = 0; i < ADDTL_LENGTH; i++)
-                AdditionalFrameData[i] = data[i + 2U];
+                AdditionalFrameData[i] = data[i + 3U];
 
             return true;
         }
@@ -135,7 +135,7 @@ namespace dvmdfsi.DFSI.RTP
             if (AdditionalFrameData != null)
             {
                 if (AdditionalFrameData.Length >= ADDTL_LENGTH)
-                    Buffer.BlockCopy(AdditionalFrameData, 0, data, 2, ADDTL_LENGTH);
+                    Buffer.BlockCopy(AdditionalFrameData, 0, data, 3, ADDTL_LENGTH);
             }
 
             // End in 0x02
