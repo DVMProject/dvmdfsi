@@ -49,7 +49,7 @@ namespace dvmdfsi.DFSI.RTP
     public class MotVoiceHeader2
     {
         public const int LENGTH = 22;
-        public const int ADDTL_LENGTH = 18;
+        public const int ADDTL_LENGTH = 19;
 
         /// <summary>
         /// 
@@ -111,7 +111,7 @@ namespace dvmdfsi.DFSI.RTP
             if (data == null)
                 return false;
 
-            TGID = FneUtils.ToUInt16(data, 1);
+            TGID = (ushort)(((data[1] << 6) & 0x3F00) | ((data[2] << 0) & 0x003F));
 
             AdditionalFrameData = new byte[ADDTL_LENGTH];
             for (int i = 0; i < ADDTL_LENGTH; i++)
@@ -130,7 +130,9 @@ namespace dvmdfsi.DFSI.RTP
                 return;
 
             data[0U] = P25DFSI.P25_DFSI_MOT_VHDR_2;
-            FneUtils.WriteBytes(TGID, ref data, 1);
+
+            data[1U] = (byte)((TGID >> 6) & 0x3F);
+            data[2U] = (byte)(TGID & 0x3F);
 
             if (AdditionalFrameData != null)
             {
