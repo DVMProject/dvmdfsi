@@ -947,6 +947,40 @@ namespace dvmdfsi
                     return;
             }
 
+            // generate RS bytes depending on DUID
+            byte[] rs = new byte[18];
+            switch (duid) {
+                case P25DUID.LDU1:
+                {
+                    rs[0U] = e.Data[4];                                                             // LCO
+                    rs[1U] = e.Data[5];                                                             // MFId
+                    rs[2U] = ldu[53];                                                               // Service Options
+                    FneUtils.Write3Bytes(e.DstId, ref rs, 3);                                       // Target Address
+                    FneUtils.Write3Bytes(e.SrcId, ref rs, 6);                                       // Source Address
+                    rs = ReedSolomonAlgorithm.Encode(rs, ErrorCorrectionCodeType.ReedSolomon_241213);
+                }
+                break;
+                case P25DUID.LDU2:
+                {
+                    rs[0] = ldu[51];                                                                // Message Indicator
+                    rs[1] = ldu[52];
+                    rs[2] = ldu[53];
+                    rs[3] = ldu[76];
+                    rs[4] = ldu[77];
+                    rs[5] = ldu[78];
+                    rs[6] = ldu[101];
+                    rs[7] = ldu[102];
+                    rs[8] = ldu[103];
+
+                    rs[9U] = ldu[126];                                                              // Algorithm ID
+                    rs[10U] = ldu[127];                                                             // Key ID
+                    rs[11U] = ldu[128];                                                             // ...
+
+                    rs = ReedSolomonAlgorithm.Encode(rs, ErrorCorrectionCodeType.ReedSolomon_24169);
+                }
+                break;
+            }
+
             // decode 9 IMBE codewords into PCM samples
             for (int n = 0; n < 9; n++)
             {
@@ -963,13 +997,20 @@ namespace dvmdfsi
                 switch (n)
                 {
                     case 0:     // VOICE1 / 10
-                        Buffer.BlockCopy(ldu, 10, voice.IMBE, 0, IMBE_BUF_LEN);
+                        {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE1 : P25DFSI.P25_DFSI_LDU2_VOICE10;
+                            Buffer.BlockCopy(ldu, 10, voice.IMBE, 0, IMBE_BUF_LEN);
+                        }
                         break;
                     case 1:     // VOICE2 / 11
-                        Buffer.BlockCopy(ldu, 26, voice.IMBE, 0, IMBE_BUF_LEN);
+                        {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE2 : P25DFSI.P25_DFSI_LDU2_VOICE11;
+                            Buffer.BlockCopy(ldu, 26, voice.IMBE, 0, IMBE_BUF_LEN);
+                        }
                         break;
                     case 2:     // VOICE3 / 12
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE3 : P25DFSI.P25_DFSI_LDU2_VOICE12;
                             Buffer.BlockCopy(ldu, 55, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[3];
                             switch (duid)
@@ -994,6 +1035,7 @@ namespace dvmdfsi
                         break;
                     case 3:     // VOICE4 / 13
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE4 : P25DFSI.P25_DFSI_LDU2_VOICE13;
                             Buffer.BlockCopy(ldu, 80, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[3];
                             switch (duid)
@@ -1018,6 +1060,7 @@ namespace dvmdfsi
                         break;
                     case 4:     // VOICE5 / 14
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE5 : P25DFSI.P25_DFSI_LDU2_VOICE14;
                             Buffer.BlockCopy(ldu, 105, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[3];
                             switch (duid)
@@ -1042,9 +1085,18 @@ namespace dvmdfsi
                         break;
                     case 5:     // VOICE6 / 15
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE6 : P25DFSI.P25_DFSI_LDU2_VOICE15;
                             Buffer.BlockCopy(ldu, 130, voice.IMBE, 0, IMBE_BUF_LEN);
                             switch (duid)
                             {
+                                case P25DUID.LDU1:
+                                    {
+                                        voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                                        voice.AdditionalFrameData[0] = rs[9];       // RS (24,12,13)
+                                        voice.AdditionalFrameData[1] = rs[10];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[2] = rs[11];      // RS (24,12,13)
+                                    }
+                                    break;
                                 case P25DUID.LDU2:
                                     {
                                         voice.AdditionalFrameData = new byte[3];
@@ -1057,13 +1109,58 @@ namespace dvmdfsi
                         }
                         break;
                     case 6:     // VOICE7 / 16
-                        Buffer.BlockCopy(ldu, 155, voice.IMBE, 0, IMBE_BUF_LEN);
+                        {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE7 : P25DFSI.P25_DFSI_LDU2_VOICE16;
+                            Buffer.BlockCopy(ldu, 155, voice.IMBE, 0, IMBE_BUF_LEN);
+                            switch (duid)
+                            {
+                                case P25DUID.LDU1:
+                                    {
+                                        voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                                        voice.AdditionalFrameData[0] = rs[12];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[1] = rs[13];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[2] = rs[14];      // RS (24,12,13)
+                                    }
+                                    break;
+                                case P25DUID.LDU2:
+                                    {
+                                        voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                                        voice.AdditionalFrameData[0] = rs[12];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[1] = rs[13];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[2] = rs[14];      // RS (24,16,9)
+                                    }
+                                    break;
+                            }
+                        }
                         break;
                     case 7:     // VOICE8 / 17
-                        Buffer.BlockCopy(ldu, 180, voice.IMBE, 0, IMBE_BUF_LEN);
+                        {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE8 : P25DFSI.P25_DFSI_LDU2_VOICE17;
+                            Buffer.BlockCopy(ldu, 180, voice.IMBE, 0, IMBE_BUF_LEN);
+                            switch (duid)
+                            {
+                                case P25DUID.LDU1:
+                                    {
+                                        voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                                        voice.AdditionalFrameData[0] = rs[15];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[1] = rs[16];      // RS (24,12,13)
+                                        voice.AdditionalFrameData[2] = rs[17];      // RS (24,12,13)
+                                    }
+                                    break;
+                                case P25DUID.LDU2:
+                                    {
+                                        voice.AdditionalFrameData = new byte[MotFullRateVoice.ADDTL_LENGTH];
+                                        voice.AdditionalFrameData[0] = rs[15];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[1] = rs[16];      // RS (24,16,9)
+                                        voice.AdditionalFrameData[2] = rs[17];      // RS (24,16,9)
+                                    }
+                                    break;
+                            }
+                        }
                         break;
                     case 8:     // VOICE9 / 18
                         {
+                            voice.FrameType = duid == P25DUID.LDU1 ? P25DFSI.P25_DFSI_LDU1_VOICE9 : P25DFSI.P25_DFSI_LDU2_VOICE18;
                             Buffer.BlockCopy(ldu, 204, voice.IMBE, 0, IMBE_BUF_LEN);
                             voice.AdditionalFrameData = new byte[2];
                             voice.AdditionalFrameData[0] = e.Data[20U];             // LSD 1
