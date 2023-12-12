@@ -333,7 +333,7 @@ namespace dvmdfsi
 
                         // LDU2
                         case P25DFSI.P25_DFSI_LDU2_VOICE10:
-                            Buffer.BlockCopy(voice.FullRateVoice.IMBE, 0, netLDU1, 10, IMBE_BUF_LEN);
+                            Buffer.BlockCopy(voice.FullRateVoice.IMBE, 0, netLDU2, 10, IMBE_BUF_LEN);
                             break;
                     }
                 }

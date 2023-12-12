@@ -127,6 +127,10 @@ namespace dvmdfsi.DFSI.RTP
                 length += SHORTENED_LENGTH;
             else
                 length += LENGTH;
+
+            // We're one byte too short on these guys
+            if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE2 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE11)
+                length += 1;
             
             // these ones are the weird ones
             if (FrameType == P25DFSI.P25_DFSI_LDU1_VOICE9 || FrameType == P25DFSI.P25_DFSI_LDU2_VOICE18)
@@ -201,7 +205,7 @@ namespace dvmdfsi.DFSI.RTP
                 for (int i = 0; i < IMBE_BUF_LEN; i++)
                     data[i + 1U] = IMBE[i];                                     // IMBE
 
-                data[12U] = Source;
+                //data[12U] = Source;   // this isn't present on these frames from the quantar
             }
             else
             {

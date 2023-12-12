@@ -204,7 +204,7 @@ namespace dvmdfsi.DFSI.RTP
                 byte[] buffer = new byte[MotFullRateVoice.SHORTENED_LENGTH];
                 FullRateVoice.Encode(ref buffer, true);
                 data[0U] = FullRateVoice.FrameType;
-                Buffer.BlockCopy(buffer, 1, data, 10, MotFullRateVoice.SHORTENED_LENGTH - 2);
+                Buffer.BlockCopy(buffer, 1, data, 10, MotFullRateVoice.SHORTENED_LENGTH - 1);
             }
 
             data[5U] = ICW;                                                     // ICW Flag ?
