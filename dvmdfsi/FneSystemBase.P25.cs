@@ -1178,8 +1178,6 @@ namespace dvmdfsi
         {
             DateTime pktTime = DateTime.Now;
 
-            if (e.PeerId == Program.Configuration.PeerId)
-                return;
             if (e.DUID == P25DUID.HDU || e.DUID == P25DUID.TSDU || e.DUID == P25DUID.PDU)
                 return;
 
