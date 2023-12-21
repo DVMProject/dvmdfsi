@@ -1087,8 +1087,8 @@ namespace dvmdfsi
                                 case P25DUID.LDU2:
                                     {
                                         voice.AdditionalFrameData = new byte[3];
-                                        voice.AdditionalFrameData[0] = ldu[126];    // MI
-                                        voice.AdditionalFrameData[1] = ldu[127];
+                                        voice.AdditionalFrameData[0] = ldu[126];    // Algorithm ID
+                                        voice.AdditionalFrameData[1] = ldu[127];    // Key ID
                                         voice.AdditionalFrameData[2] = ldu[128];
                                     }
                                     break;
