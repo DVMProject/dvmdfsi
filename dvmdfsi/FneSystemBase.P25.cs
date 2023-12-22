@@ -939,8 +939,8 @@ namespace dvmdfsi
             switch (duid) {
                 case P25DUID.LDU1:
                 {
-                    rs[0U] = e.Data[4];                                                             // LCO
-                    rs[1U] = e.Data[5];                                                             // MFId
+                    rs[0U] = ldu[51];                                                               // LCO
+                    rs[1U] = ldu[52];                                                               // MFId
                     rs[2U] = ldu[53];                                                               // Service Options
                     FneUtils.Write3Bytes(e.DstId, ref rs, 3);                                       // Target Address
                     FneUtils.Write3Bytes(e.SrcId, ref rs, 6);                                       // Source Address
@@ -1004,8 +1004,8 @@ namespace dvmdfsi
                             {
                                 case P25DUID.LDU1:
                                     {
-                                        voice.AdditionalFrameData[0] = e.Data[4];   // LCO
-                                        voice.AdditionalFrameData[1] = e.Data[5];   // MFId
+                                        voice.AdditionalFrameData[0] = ldu[51];     // LCO
+                                        voice.AdditionalFrameData[1] = ldu[52];     // MFId
                                         voice.AdditionalFrameData[2] = ldu[53];     // Service Options
                                     }
                                     break;
