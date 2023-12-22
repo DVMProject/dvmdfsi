@@ -38,7 +38,7 @@ namespace dvmdfsi.DFSI.RTP
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     ///     |   ICW Flag ?  |     RSSI      |  RSSI Valid   |     RSSI      |
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    ///     |   Reserved                                                    |
+    ///     |   Header Control Word                                         |
     ///     +                                                               +
     ///     |                                                               |
     ///     +                                                               +
@@ -47,12 +47,13 @@ namespace dvmdfsi.DFSI.RTP
     ///     |                                                               |
     ///     +                                                               +
     ///     |                                                               |
-    ///     +               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    ///     |               |
+    ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ///     | Src Flag      |
     ///     +-+-+-+-+-+-+-+-+
     public class MotVoiceHeader1
     {
         public const int LENGTH = 30;
+        public const int HCW_LENGTH = 20;
 
         /// <summary>
         /// 
@@ -99,6 +100,15 @@ namespace dvmdfsi.DFSI.RTP
             set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public byte[] Header
+        {
+            get;
+            set;
+        }
+
         /*
         ** Methods
         */
@@ -114,6 +124,7 @@ namespace dvmdfsi.DFSI.RTP
             Source = 0x02;
 
             StartOfStream = null;
+            Header = new byte[HCW_LENGTH];
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="MotVoiceHeader1"/> class.
@@ -145,6 +156,10 @@ namespace dvmdfsi.DFSI.RTP
             ICW = data[5U];                                                     // ICW Flag ?
             RSSI = data[6U];                                                    // RSSI
             RSSIValidity = (RSSIValidityFlag)data[7U];                          // RSSI Validity
+            Source = data[29];
+
+            Header = new byte[HCW_LENGTH];
+            Buffer.BlockCopy(data, 10, Header, 0, HCW_LENGTH);
 
             return true;
         }
@@ -175,10 +190,11 @@ namespace dvmdfsi.DFSI.RTP
             data[7U] = (byte)RSSIValidity;                                      // RSSI Validity
             data[8U] = RSSI;                                                    // RSSI
 
-            // These bytes are required but we're not sure why
-            data[23U] = 0x08;
-            data[MotVoiceHeader1.LENGTH - 2] = Source;
-            data[MotVoiceHeader1.LENGTH - 1] = 0x02;
+            if (Header != null)
+                if (Header.Length == HCW_LENGTH)
+                    Buffer.BlockCopy(Header, 0, data, 9, HCW_LENGTH);
+
+            data[MotVoiceHeader1.LENGTH - 1] = Source;
         }
     } // public class MotVoiceHeader1
 } // namespace dvmdfsi.DFSI.RTP

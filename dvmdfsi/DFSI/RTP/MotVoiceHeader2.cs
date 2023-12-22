@@ -34,8 +34,8 @@ namespace dvmdfsi.DFSI.RTP
     /// Byte 0               1               2               3
     /// Bit  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
     ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    ///     |   TGID                        |                               |
-    ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+    ///     |   Header Control Word                                         |
+    ///     +                                                               +
     ///     |                                                               |
     ///     +                                                               +
     ///     |                                                               |
@@ -49,16 +49,7 @@ namespace dvmdfsi.DFSI.RTP
     public class MotVoiceHeader2
     {
         public const int LENGTH = 22;
-        public const int ADDTL_LENGTH = 19;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public ushort TGID
-        {
-            get;
-            set;
-        }
+        public const int HCW_LENGTH = 20;
 
         /// <summary>
         /// 
@@ -72,7 +63,7 @@ namespace dvmdfsi.DFSI.RTP
         /// <summary>
         /// 
         /// </summary>
-        public byte[] AdditionalFrameData
+        public byte[] Header
         {
             get;
             set;
@@ -87,11 +78,10 @@ namespace dvmdfsi.DFSI.RTP
         /// </summary>
         public MotVoiceHeader2()
         {
-            TGID = 0;
             Source = 0x02;
 
-            AdditionalFrameData = null;
-        }
+            Header = new byte[HCW_LENGTH];
+       }
         /// <summary>
         /// Initializes a new instance of the <see cref="MotVoiceHeader2"/> class.
         /// </summary>
@@ -111,11 +101,10 @@ namespace dvmdfsi.DFSI.RTP
             if (data == null)
                 return false;
 
-            TGID = (ushort)(((data[1] << 6) & 0x3F00) | ((data[2] << 0) & 0x003F));
+            Source = data[21];
 
-            AdditionalFrameData = new byte[ADDTL_LENGTH];
-            for (int i = 0; i < ADDTL_LENGTH; i++)
-                AdditionalFrameData[i] = data[i + 3U];
+            Header = new byte[HCW_LENGTH];
+            Buffer.BlockCopy(data, 1, Header, 0, HCW_LENGTH);
 
             return true;
         }
@@ -131,16 +120,10 @@ namespace dvmdfsi.DFSI.RTP
 
             data[0U] = P25DFSI.P25_DFSI_MOT_VHDR_2;
 
-            data[1U] = (byte)((TGID >> 6) & 0x3F);
-            data[2U] = (byte)(TGID & 0x3F);
+            if (Header != null)
+                if (Header.Length == HCW_LENGTH)
+                    Buffer.BlockCopy(Header, 0, data, 1, HCW_LENGTH);
 
-            if (AdditionalFrameData != null)
-            {
-                if (AdditionalFrameData.Length >= ADDTL_LENGTH)
-                    Buffer.BlockCopy(AdditionalFrameData, 0, data, 3, ADDTL_LENGTH);
-            }
-
-            // End in 0x02
             data[MotVoiceHeader2.LENGTH - 1] = Source;
         }
     } // public class MotVoiceHeader2

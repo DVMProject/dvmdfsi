@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Serilog;
 
 using fnecore;
+using fnecore.EDAC.RS;
 using fnecore.DMR;
 using fnecore.P25;
 
@@ -89,6 +90,15 @@ namespace dvmdfsi
         /// </summary>
         public ushort KeyId = 0;
 
+        /// <summary>
+        /// Voice Header 1
+        /// </summary>
+        public byte[] VHDR1 = null;
+        /// <summary>
+        /// Voice Header 2
+        /// </summary>
+        public byte[] VHDR2 = null;
+
         /*
         ** Methods
         */
@@ -112,6 +122,9 @@ namespace dvmdfsi
 
             AlgorithmId = P25Defines.P25_ALGO_UNENCRYPT;
             KeyId = 0;
+
+            VHDR1 = null;
+            VHDR2 = null;
         }
     } // public class RemoteCallData
 
@@ -317,7 +330,44 @@ namespace dvmdfsi
             }
             else if (frameType == P25DFSI.P25_DFSI_MOT_VHDR_1 || frameType == P25DFSI.P25_DFSI_MOT_VHDR_2)
             {
-                // skip doing anything with this for now...
+                if (frameType == P25DFSI.P25_DFSI_MOT_VHDR_1)
+                {
+                    MotVoiceHeader1 vhdr1 = new MotVoiceHeader1(message);
+                    remoteCallData.VHDR1 = vhdr1.Header;
+                }
+                else
+                {
+                    MotVoiceHeader2 vhdr2 = new MotVoiceHeader2(message);
+                    remoteCallData.VHDR2 = vhdr2.Header;
+                    if (remoteCallData.VHDR1 != null &&
+                        remoteCallData.VHDR2 != null)
+                    {
+                        byte[] raw = new byte[P25DFSI.P25_DFSI_VHDR_RAW_LEN];
+
+                        Buffer.BlockCopy(remoteCallData.VHDR1, 0, raw, 0, 8);
+                        Buffer.BlockCopy(remoteCallData.VHDR1, 9, raw, 8, 8);
+                        Buffer.BlockCopy(remoteCallData.VHDR1, 18, raw, 16, 2);
+
+                        Buffer.BlockCopy(remoteCallData.VHDR2, 0, raw, 18, 8);
+                        Buffer.BlockCopy(remoteCallData.VHDR2, 9, raw, 26, 8);
+                        Buffer.BlockCopy(remoteCallData.VHDR2, 18, raw, 34, 2);
+
+                        byte[] vhdr = new byte[P25DFSI.P25_DFSI_VHDR_LEN];
+                        uint offset = 0;
+                        for (int i = 0; i < raw.Length; i++, offset += 6)
+                            FneUtils.HEX2BIN(raw[i], ref vhdr, offset);
+
+                        vhdr = ReedSolomonAlgorithm.Decode(vhdr, ErrorCorrectionCodeType.ReedSolomon_362017);
+
+                        byte[] mi = new byte[P25Defines.P25_MI_LENGTH];
+                        Buffer.BlockCopy(vhdr, 0, mi, 0, P25Defines.P25_MI_LENGTH);
+                        remoteCallData.MessageIndicator = mi;                // MI
+                        remoteCallData.MFId = vhdr[9];                       // Manufactuerer ID
+                        remoteCallData.AlgorithmId = vhdr[10];               // Algorithm ID
+                        remoteCallData.KeyId = FneUtils.ToUInt16(vhdr, 11);  // Key ID
+                        remoteCallData.DstId = FneUtils.ToUInt16(vhdr, 13);  // TGID
+                    }
+                }
             }
             else
             {
