@@ -43,53 +43,8 @@ namespace dvmdfsi
     /// <summary>
     /// Metadata class containing remote call data.
     /// </summary>
-    public class RemoteCallData
+    public class RemoteCallData : fnecore.RemoteCallData
     {
-        /// <summary>
-        /// Source ID.
-        /// </summary>
-        public uint SrcId = 0;
-        /// <summary>
-        /// Destination ID.
-        /// </summary>
-        public uint DstId = 0;
-
-        /// <summary>
-        /// Link-Control Opcode.
-        /// </summary>
-        public byte LCO = 0;
-        /// <summary>
-        /// Manufacturer ID.
-        /// </summary>
-        public byte MFId = 0;
-        /// <summary>
-        /// Service Options.
-        /// </summary>
-        public byte ServiceOptions = 0;
-
-        /// <summary>
-        /// Low-speed Data Byte 1
-        /// </summary>
-        public byte LSD1 = 0;
-        /// <summary>
-        /// Low-speed Data Byte 2
-        /// </summary>
-        public byte LSD2 = 0;
-
-        /// <summary>
-        /// Encryption Message Indicator
-        /// </summary>
-        public byte[] MessageIndicator = new byte[P25Defines.P25_MI_LENGTH];
-
-        /// <summary>
-        /// Algorithm ID.
-        /// </summary>
-        public byte AlgorithmId = P25Defines.P25_ALGO_UNENCRYPT;
-        /// <summary>
-        /// Key ID.
-        /// </summary>
-        public ushort KeyId = 0;
-
         /// <summary>
         /// Voice Header 1
         /// </summary>
@@ -106,35 +61,20 @@ namespace dvmdfsi
         /// <summary>
         /// Reset values.
         /// </summary>
-        public void Reset()
+        public override void Reset()
         {
-            SrcId = 0;
-            DstId = 0;
-
-            LCO = 0;
-            MFId = 0;
-            ServiceOptions = 0;
-
-            LSD1 = 0;
-            LSD2 = 0;
-
-            MessageIndicator = new byte[P25Defines.P25_MI_LENGTH];
-
-            AlgorithmId = P25Defines.P25_ALGO_UNENCRYPT;
-            KeyId = 0;
+            base.Reset();
 
             VHDR1 = null;
             VHDR2 = null;
         }
-    } // public class RemoteCallData
+    } // public class RemoteCallData : fnecore.RemoteCallData
 
     /// <summary>
     /// Implements a FNE system.
     /// </summary>
-    public abstract partial class FneSystemBase
+    public abstract partial class FneSystemBase : fnecore.FneSystemBase
     {
-        protected FneBase fne;
-
         private Random rand;
         private uint txStreamId;
 
@@ -148,62 +88,6 @@ namespace dvmdfsi
         private SerialService dfsiSerial;
 
         /*
-        ** Properties
-        */
-
-        /// <summary>
-        /// Gets the system name for this <see cref="FneSystemBase"/>.
-        /// </summary>
-        public string SystemName
-        {
-            get
-            {
-                if (fne != null)
-                    return fne.SystemName;
-                return string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Gets the peer ID for this <see cref="FneSystemBase"/>.
-        /// </summary>
-        public uint PeerId
-        {
-            get
-            {
-                if (fne != null)
-                    return fne.PeerId;
-                return uint.MaxValue;
-            }
-        }
-
-        /// <summary>
-        /// Flag indicating whether this <see cref="FneSystemBase"/> is running.
-        /// </summary>
-        public bool IsStarted
-        { 
-            get
-            {
-                if (fne != null)
-                    return fne.IsStarted;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Gets the <see cref="FneType"/> this <see cref="FneBase"/> is.
-        /// </summary>
-        public FneType FneType
-        {
-            get
-            {
-                if (fne != null)
-                    return fne.FneType;
-                return FneType.UNKNOWN;
-            }
-        }
-
-        /*
         ** Methods
         */
 
@@ -211,28 +95,13 @@ namespace dvmdfsi
         /// Initializes a new instance of the <see cref="FneSystemBase"/> class.
         /// </summary>
         /// <param name="fne">Instance of <see cref="FneMaster"/> or <see cref="FnePeer"/></param>
-        public FneSystemBase(FneBase fne)
+        public FneSystemBase(FneBase fne) : base(fne, Program.FneLogLevel)
         {
             this.fne = fne;
 
             this.rand = new Random(Guid.NewGuid().GetHashCode());
 
-            // hook various FNE network callbacks
-            this.fne.DMRDataValidate = DMRDataValidate;
-            this.fne.DMRDataReceived += DMRDataReceived;
-
-            this.fne.P25DataValidate = P25DataValidate;
-            this.fne.P25DataPreprocess += P25DataPreprocess;
-            this.fne.P25DataReceived += P25DataReceived;
-
-            this.fne.NXDNDataValidate = NXDNDataValidate;
-            this.fne.NXDNDataReceived += NXDNDataReceived;
-
-            this.fne.PeerIgnored = PeerIgnored;
-            this.fne.PeerConnected += PeerConnected;
-
             // hook logger callback
-            this.fne.LogLevel = Program.FneLogLevel;
             this.fne.Logger = (LogLevel level, string message) =>
             {
                 switch (level)
@@ -865,10 +734,9 @@ namespace dvmdfsi
         /// <summary>
         /// Starts the main execution loop for this <see cref="FneSystemBase"/>.
         /// </summary>
-        public void Start()
+        public override void Start()
         {
-            if (!fne.IsStarted)
-                fne.Start();
+            base.Start();
 
             switch (Program.Configuration.Mode)
             {
@@ -900,9 +768,7 @@ namespace dvmdfsi
         public void StartSerialDvm()
         {
             if (!dfsiSerial.IsStarted)
-            {
                 dfsiSerial.Start();
-            }
         }
 
         /// <summary>
@@ -931,10 +797,9 @@ namespace dvmdfsi
         /// <summary>
         /// Stops the main execution loop for this <see cref="FneSystemBase"/>.
         /// </summary>
-        public void Stop()
+        public override void Stop()
         {
-            if (fne.IsStarted)
-                fne.Stop();
+            base.Stop();
 
             if (dfsiControl != null)
             {
@@ -967,7 +832,7 @@ namespace dvmdfsi
         /// <param name="dataType">DMR Data Type</param>
         /// <param name="streamId">Stream ID</param>
         /// <returns>True, if peer is ignored, otherwise false.</returns>
-        protected virtual bool PeerIgnored(uint peerId, uint srcId, uint dstId, byte slot, CallType callType, FrameType frameType, DMRDataType dataType, uint streamId)
+        protected override bool PeerIgnored(uint peerId, uint srcId, uint dstId, byte slot, CallType callType, FrameType frameType, DMRDataType dataType, uint streamId)
         {
             return false;
         }
@@ -977,9 +842,9 @@ namespace dvmdfsi
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected virtual void PeerConnected(object sender, PeerConnectedEvent e)
+        protected override void PeerConnected(object sender, PeerConnectedEvent e)
         {
             return;
         }
-    } // public abstract partial class FneSystemBase
+    } // public abstract partial class FneSystemBase : fnecore.FneSystemBase
 } // namespace dvmdfsi

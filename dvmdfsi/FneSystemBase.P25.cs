@@ -40,14 +40,13 @@ namespace dvmdfsi
     /// <summary>
     /// Implements a FNE system base.
     /// </summary>
-    public abstract partial class FneSystemBase
+    public abstract partial class FneSystemBase : fnecore.FneSystemBase
     {
         public DateTime RxStart = DateTime.Now;
         public uint RxStreamId = 0;
         public FrameType RxType = FrameType.TERMINATOR;
 
         private static DateTime start = DateTime.Now;
-        private const int P25_MSG_HDR_SIZE = 24;
         private const int IMBE_BUF_LEN = 11;
 
         private byte[] netLDU1;
@@ -72,7 +71,7 @@ namespace dvmdfsi
         /// <param name="streamId">Stream ID</param>
         /// <param name="message">Raw message data</param>
         /// <returns>True, if data stream is valid, otherwise false.</returns>
-        protected virtual bool P25DataValidate(uint peerId, uint srcId, uint dstId, CallType callType, P25DUID duid, FrameType frameType, uint streamId, byte[] message)
+        protected override bool P25DataValidate(uint peerId, uint srcId, uint dstId, CallType callType, P25DUID duid, FrameType frameType, uint streamId, byte[] message)
         {
             return true;
         }
@@ -82,63 +81,9 @@ namespace dvmdfsi
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected virtual void P25DataPreprocess(object sender, P25DataReceivedEvent e)
+        protected override void P25DataPreprocess(object sender, P25DataReceivedEvent e)
         {
             return;
-        }
-
-        /// <summary>
-        /// Creates an P25 frame message header.
-        /// </summary>
-        /// <param name="duid"></param>
-        /// <param name="callData"></param>
-        private void CreateP25MessageHdr(byte duid, RemoteCallData callData, ref byte[] data)
-        {
-            FneUtils.StringToBytes(Constants.TAG_P25_DATA, data, 0, Constants.TAG_P25_DATA.Length);
-
-            data[4U] = callData.LCO;                                                        // LCO
-
-            FneUtils.Write3Bytes(callData.SrcId, ref data, 5);                              // Source Address
-            FneUtils.Write3Bytes(callData.DstId, ref data, 8);                              // Destination Address
-
-            data[11U] = 0;                                                                  // System ID
-            data[12U] = 0;
-
-            data[14U] = 0;                                                                  // Control Byte
-
-            data[15U] = callData.MFId;                                                      // MFId
-
-            data[16U] = 0;                                                                  // Network ID
-            data[17U] = 0;
-            data[18U] = 0;
-
-            data[20U] = callData.LSD1;                                                      // LSD 1
-            data[21U] = callData.LSD2;                                                      // LSD 2
-
-            data[22U] = duid;                                                               // DUID
-
-            data[180U] = 0;                                                                 // Frame Type
-        }
-
-        /// <summary>
-        /// Helper to send a P25 TDU message.
-        /// </summary>
-        /// <param name="callData"></param>
-        /// <param name="grantDemand"></param>
-        private void SendP25TDU(RemoteCallData callData, bool grantDemand = false)
-        {
-            FnePeer peer = (FnePeer)fne;
-            ushort pktSeq = peer.pktSeq(true);
-
-            byte[] payload = new byte[200];
-            CreateP25MessageHdr((byte)P25DUID.TDU, callData, ref payload);
-            payload[23U] = P25_MSG_HDR_SIZE;
-
-            // if this TDU is demanding a grant, set the grant demand control bit
-            if (grantDemand)
-                payload[14U] |= 0x80;
-
-            peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), payload, pktSeq, txStreamId);
         }
 
         /// <summary>
@@ -1193,7 +1138,7 @@ namespace dvmdfsi
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected virtual void P25DataReceived(object sender, P25DataReceivedEvent e)
+        protected override void P25DataReceived(object sender, P25DataReceivedEvent e)
         {
             DateTime pktTime = DateTime.Now;
 
@@ -1363,5 +1308,5 @@ namespace dvmdfsi
 
             return;
         }
-    } // public abstract partial class FneSystemBase
+    } // public abstract partial class FneSystemBase : fnecore.FneSystemBase
 } // namespace dvmdfsi
