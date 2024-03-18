@@ -17,6 +17,7 @@ using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text;
+using System.Collections.Generic;
 
 using Serilog;
 
@@ -31,6 +32,11 @@ namespace dvmdfsi.DFSI
     {
         public const byte DVM_FRAME_START = 0xFE;
         public const byte CMD_P25_DATA = 0x31;
+        public const byte CMD_DEBUG1 = 0xF1;
+        public const byte CMD_DEBUG2 = 0xF2;
+        public const byte CMD_DEBUG3 = 0xF3;
+        public const byte CMD_DEBUG4 = 0xF4;
+        public const byte CMD_DEBUG5 = 0xF5;
     }
 
     /// <summary>
@@ -42,10 +48,9 @@ namespace dvmdfsi.DFSI
 
         private SerialPort port = null;
 
-        private bool abortListening = false;
-
         private CancellationTokenSource listenCancelToken = new CancellationTokenSource();
         private Task listenTask = null;
+        private bool abortListen = false;
 
         /*
         ** Properties
@@ -143,7 +148,7 @@ namespace dvmdfsi.DFSI
 
             Log.Logger.Information($"({Program.Configuration.Name}) starting serial port services on port {port.PortName} at {port.BaudRate} baud");
 
-            abortListening = false;
+            abortListen = false;
 
             // Open the port
             try
@@ -174,7 +179,7 @@ namespace dvmdfsi.DFSI
             // stop serial listen task
             if (listenTask != null)
             {
-                abortListening = true;
+                abortListen = true;
                 listenCancelToken.Cancel();
 
                 try
@@ -199,7 +204,7 @@ namespace dvmdfsi.DFSI
             CancellationToken ct = listenCancelToken.Token;
             ct.ThrowIfCancellationRequested();
 
-            while (!abortListening && port.IsOpen)
+            while (!abortListen && port.IsOpen)
             {
                 // Buffer for received serial data
                 var rxBuffer = new byte[64];
@@ -233,13 +238,19 @@ namespace dvmdfsi.DFSI
                         // Send to our RTPFrameHandler with a dummy UDP and RTP frame since those aren't needed here
                         RTPFrameHandler?.Invoke(new UdpFrame(), dfsiData, new RtpHeader());
                         break;
+                    case DVMModem.CMD_DEBUG1:
+                        // extract the debug message
+                        var debugMsg = new byte[length - 3];
+                        Array.Copy(rxBuffer, 3, debugMsg, 0, length - 3);
+                        Log.Logger.Debug($"({Program.Configuration.Name}) V24 Debug Message: {System.Text.Encoding.Default.GetString(debugMsg)})");
+                        break;
                     default:
                         Log.Logger.Warning($"({Program.Configuration.Name}) got unhandled DVM command from serial: {command}");
                         break;
                 }
                 
                 if (ct.IsCancellationRequested)
-                    abortListening = true;
+                    abortListen = true;
             }
         }
     } // public class RTPService
