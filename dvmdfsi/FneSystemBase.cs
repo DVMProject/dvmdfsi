@@ -13,6 +13,7 @@
 */
 using System;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -27,7 +28,6 @@ using fnecore.P25;
 using dvmdfsi.DFSI;
 using dvmdfsi.DFSI.FSC;
 using dvmdfsi.DFSI.RTP;
-using System.Diagnostics.Tracing;
 
 namespace dvmdfsi
 {
@@ -177,6 +177,7 @@ namespace dvmdfsi
                         remoteCallInProgress = true;
                         remoteCallData.Reset();
                         Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL START     * [STREAM ID {txStreamId}]");
+                        SendP25TDU(remoteCallData, true);
                     }
                 }
                 else
@@ -488,6 +489,7 @@ namespace dvmdfsi
                                 remoteCallInProgress = true;
                                 remoteCallData.Reset();
                                 Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL START     * [STREAM ID {txStreamId}]");
+                                SendP25TDU(remoteCallData, true);
                             }
                         }
                         break;
