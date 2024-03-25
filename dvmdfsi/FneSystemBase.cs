@@ -177,7 +177,6 @@ namespace dvmdfsi
                         remoteCallInProgress = true;
                         remoteCallData.Reset();
                         Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL START     * [STREAM ID {txStreamId}]");
-                        SendP25TDU(remoteCallData, true);
                     }
                 }
                 else
@@ -418,6 +417,9 @@ namespace dvmdfsi
                 // send P25 LDU1
                 if (p25N == 8U)
                 {
+                    // send a grant demand burst now that we have both the srcId and dstId
+                    SendP25TDU(remoteCallData, true);
+
                     ushort pktSeq = 0;
                     if (p25SeqNo == 0U)
                         pktSeq = peer.pktSeq(true);
@@ -489,7 +491,6 @@ namespace dvmdfsi
                                 remoteCallInProgress = true;
                                 remoteCallData.Reset();
                                 Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL START     * [STREAM ID {txStreamId}]");
-                                SendP25TDU(remoteCallData, true);
                             }
                         }
                         break;
@@ -679,6 +680,9 @@ namespace dvmdfsi
                             // send P25 LDU1
                             if (p25N == 8U)
                             {
+                                // send a grant demand burst now that we have both the srcId and dstId
+                                SendP25TDU(remoteCallData, true);
+
                                 ushort pktSeq = 0;
                                 if (p25SeqNo == 0U)
                                     pktSeq = peer.pktSeq(true);
