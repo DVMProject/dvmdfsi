@@ -25,6 +25,8 @@ using fnecore;
 using fnecore.P25;
 using System.Reflection;
 using System.Data.SqlTypes;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks.Dataflow;
 
 namespace dvmdfsi.DFSI
 {
@@ -38,6 +40,21 @@ namespace dvmdfsi.DFSI
         public const byte CMD_DEBUG4 = 0xF4;
         public const byte CMD_DEBUG5 = 0xF5;
     }
+    
+    public enum TxMsgType
+    {
+        Normal,
+        IMBE
+    }
+
+    public class SerialMessage
+    {
+        // Byte message
+        public byte[] Data {get; set;}
+        // Timestamp to send the data over the port
+        public long Timestamp {get; set;}
+        
+    }
 
     /// <summary>
     /// Implements the DFSI RTP port interface
@@ -48,9 +65,21 @@ namespace dvmdfsi.DFSI
 
         private SerialPort port = null;
 
+        // Thread management variables for listen task
         private CancellationTokenSource listenCancelToken = new CancellationTokenSource();
         private Task listenTask = null;
         private bool abortListen = false;
+
+        // Thread management variables for transmit task
+        private CancellationTokenSource transmitCancelToken = new CancellationTokenSource();
+        private Task transmitTask = null;
+        private bool abortTransmit = false;
+
+        // Serial TX buffer for properly metering our serial data
+        private Queue<SerialMessage> TxBuffer = new Queue<SerialMessage>();
+        // Stopwatch for properly timing out serial IMBE frames (poor man's jitter buffer)
+        private Stopwatch txMessageTimer = new Stopwatch();
+        private SerialMessage lastMessage;
 
         /*
         ** Properties
@@ -114,7 +143,7 @@ namespace dvmdfsi.DFSI
         /// Helper to send a raw Serial frame
         /// </summary>
         /// <param name="message">byte array to send to the serial port</param>
-        public void Send(byte[] message)
+        public void Send(byte[] message, TxMsgType type)
         {
             if (port.IsOpen)
             {
@@ -127,10 +156,49 @@ namespace dvmdfsi.DFSI
 
                 Array.Copy(message, 0, buffer, 4, message.Length);
 
-                Log.Logger.Verbose($"({Program.Configuration.Name}) sending {buffer.Length}-byte message to serial port");
+                Log.Logger.Verbose($"({Program.Configuration.Name}) adding {buffer.Length}-byte message to serial TX buffer");
                 Log.Logger.Verbose($"{BitConverter.ToString(buffer).Replace("-"," ")}");
 
-                port.Write(buffer, 0, buffer.Length);
+                // Calculate the correct time to send this message
+                long msgTime = 0;
+                // if this is the first message, send timestamp is current time plus our fixed delay
+                if (lastMessage == null)
+                {
+                    msgTime = txMessageTimer.ElapsedMilliseconds + Program.Configuration.SerialTxJitter;
+                }
+                // If we had a message before this, calculate the tx timestamp dynamically
+                else
+                {
+                    long lastMsgTime = lastMessage.Timestamp;
+                    // If the last message occured longer than our buffer delay, we restart our timestamp sequence
+                    if (txMessageTimer.ElapsedMilliseconds - lastMsgTime > Program.Configuration.SerialTxJitter)
+                    {
+                        msgTime = txMessageTimer.ElapsedMilliseconds + Program.Configuration.SerialTxJitter;
+                    }
+                    // Otherwise, we time out messages as appropriate for the message type
+                    else
+                    {
+                        if (type == TxMsgType.IMBE)
+                        {
+                            // We must make sure IMBE frames go out at exactly 20ms period
+                            msgTime = lastMsgTime + 20;
+                        }
+                        else
+                        {
+                            // Any other message we don't care, so just add 5 ms (basically the minimum time a message can be)
+                            msgTime = lastMsgTime + 5;
+                        }
+                    }
+                }
+
+                // Create the serial message object and add it to the queue
+                SerialMessage serMsg = new SerialMessage
+                {
+                    Data = buffer,
+                    Timestamp = msgTime
+                };
+                TxBuffer.Enqueue(serMsg);
+                lastMessage = serMsg;
             }
             else
             {
@@ -163,6 +231,12 @@ namespace dvmdfsi.DFSI
             // Start async listener
             listenTask = Task.Factory.StartNew(Listen, listenCancelToken.Token);
 
+            // Start async transmitter
+            transmitTask = Task.Factory.StartNew(Transmit, transmitCancelToken.Token);
+
+            // Start tx mesage timer
+            txMessageTimer.Start();
+
             isStarted = true;
         }
 
@@ -192,6 +266,26 @@ namespace dvmdfsi.DFSI
                     listenCancelToken.Dispose();
                 }
             }
+
+            if (transmitTask != null)
+            {
+                abortTransmit = true;
+                transmitCancelToken.Cancel();
+
+                try
+                {
+                    transmitTask.GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException) { /* stub */ }
+                finally
+                {
+                    transmitCancelToken.Dispose();
+                }
+            }
+
+            // Stop the stopwatch
+            txMessageTimer.Stop();
+            txMessageTimer.Reset();
 
             isStarted = false;
         }
@@ -253,5 +347,34 @@ namespace dvmdfsi.DFSI
                     abortListen = true;
             }
         }
+
+        private async void Transmit()
+        {
+            while (!abortTransmit && port.IsOpen)
+            {
+                // Make sure we have data to send first
+                if (TxBuffer.Count > 0)
+                {
+                    // Get the first message in the queue, but don't remove it yet in case we have to wait
+                    SerialMessage txMsg = TxBuffer.Peek();
+
+                    // Send it if our stopwatch time has elapsed
+                    if (txMessageTimer.ElapsedMilliseconds >= txMsg.Timestamp)
+                    {
+                        // Send
+                        Log.Logger.Debug($"({Program.Configuration.Name}) wrote {txMsg.Data.Length}-byte message to serial port");
+                        port.Write(txMsg.Data, 0, txMsg.Data.Length);
+                        // Remove from queue
+                        TxBuffer.Dequeue();
+                    }
+                }
+                else
+                {
+                    // Delay
+                    await Task.Delay(1);
+                }
+            }
+        }
+
     } // public class RTPService
 } // namespace dvmdfsi.DFSI

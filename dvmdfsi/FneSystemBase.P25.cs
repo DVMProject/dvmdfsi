@@ -461,7 +461,7 @@ namespace dvmdfsi
             if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                 dfsiRTP.SendRemote(buffer);
             else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                dfsiSerial.Send(buffer);
+                dfsiSerial.Send(buffer, TxMsgType.Normal);
 
             byte mfId = e.Data[15];
             byte algId = P25Defines.P25_ALGO_UNENCRYPT;
@@ -514,7 +514,7 @@ namespace dvmdfsi
             if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                 dfsiRTP.SendRemote(buffer);
             else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                dfsiSerial.Send(buffer);
+                dfsiSerial.Send(buffer, TxMsgType.Normal);
 
             // VHDR2
             MotVoiceHeader2 vhdr2 = new MotVoiceHeader2();
@@ -530,7 +530,7 @@ namespace dvmdfsi
             if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                 dfsiRTP.SendRemote(buffer);
             else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                dfsiSerial.Send(buffer);
+                dfsiSerial.Send(buffer, TxMsgType.Normal);
         }
 
         /// <summary>
@@ -555,7 +555,7 @@ namespace dvmdfsi
             if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                 dfsiRTP.SendRemote(buffer);
             else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                dfsiSerial.Send(buffer);
+                dfsiSerial.Send(buffer, TxMsgType.Normal);
         }
 
         /// <summary>
@@ -587,7 +587,7 @@ namespace dvmdfsi
             if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                 dfsiRTP.SendRemote(buffer);
             else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                dfsiSerial.Send(buffer);
+                dfsiSerial.Send(buffer, TxMsgType.Normal);
         }
 
         /// <summary>
@@ -616,7 +616,7 @@ namespace dvmdfsi
             if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                 dfsiRTP.SendRemote(buffer);
             else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                dfsiSerial.Send(buffer);
+                dfsiSerial.Send(buffer, TxMsgType.Normal);
         }
 
         /// <summary>
@@ -870,7 +870,7 @@ namespace dvmdfsi
                     if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                         dfsiRTP.SendRemote(buffer);
                     else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                        dfsiSerial.Send(buffer);
+                        dfsiSerial.Send(buffer, TxMsgType.IMBE);
             }
         }
 
@@ -1120,7 +1120,7 @@ namespace dvmdfsi
                 if (Program.Configuration.Mode == DFSIMode.UdpDvm)
                     dfsiRTP.SendRemote(buffer);
                 else if (Program.Configuration.Mode == DFSIMode.SerialDvm)
-                    dfsiSerial.Send(buffer);
+                    dfsiSerial.Send(buffer, TxMsgType.IMBE);
             }
         }
 

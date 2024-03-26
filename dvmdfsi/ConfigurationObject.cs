@@ -140,6 +140,10 @@ namespace dvmdfsi
         /// 
         /// </summary>
         public int SerialBaudrate = 0;
+        /// <summary>
+        /// 
+        /// </summary>
+        public int SerialTxJitter = 100;
 
         /*
         ** Methods

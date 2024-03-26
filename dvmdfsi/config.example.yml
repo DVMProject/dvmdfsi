@@ -46,6 +46,7 @@ remoteRtpPort: 27500
 # Serial configuration for serial DFSI
 serialPortName: "COM26"
 serialBaudrate: 115200
+serialTxJitter: 200
 
 #
 # Logging Configuration
