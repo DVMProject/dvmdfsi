@@ -502,6 +502,7 @@ namespace dvmdfsi
                                 txStreamId = (uint)rand.Next(int.MinValue, int.MaxValue);
                                 remoteCallInProgress = true;
                                 remoteCallData.Reset();
+                                remoteCallData.InitialStartOfCall = true;
                                 Log.Logger.Information($"({SystemName}) DFSI Traffic *CALL START     * [STREAM ID {txStreamId}]");
                             }
                         }
@@ -692,8 +693,12 @@ namespace dvmdfsi
                             // send P25 LDU1
                             if (p25N == 8U)
                             {
-                                // send a grant demand burst now that we have both the srcId and dstId
-                                SendP25TDU(remoteCallData, true);
+                                if (remoteCallData.InitialStartOfCall)
+                                {
+                                    // send a grant demand burst now that we have both the srcId and dstId
+                                    SendP25TDU(remoteCallData, true);
+                                    remoteCallData.InitialStartOfCall = false;
+                                }
 
                                 ushort pktSeq = 0;
                                 if (p25SeqNo == 0U)
