@@ -1,0 +1,96 @@
+# Author: K4YT3X <i@k4yt3x.com>
+# Compiles dvmdfsi for Linux, Windows, and upload the compiled files into a release
+
+name: dvmdfsi-release
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-20.04
+    outputs:
+      VERSION: ${{ steps.get_version.outputs.VERSION }}
+    steps:
+      - name: Get version
+        id: get_version
+        run: echo VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
+
+  build:
+    name: Build
+    needs: [setup]
+    strategy:
+      matrix:
+        runtime: [linux-x64, linux-arm64, win-x64]
+    runs-on: ubuntu-20.04
+    env:
+      DVMDFSI_PATH: dvmdfsi-${{ needs.setup.outputs.VERSION }}-${{ matrix.runtime }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.VERSION }}
+          submodules: recursive
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Build and Publish
+        working-directory: ./dvmdfsi
+        run: dotnet publish -c Release -r ${{ matrix.runtime }} --self-contained true
+      - name: Package and Upload Artifacts (Linux)
+        run: |
+          mkdir "$DVMDFSI_PATH"
+          cp -r dvmdfsi/bin/Release/${{ matrix.runtime }}/dvmdfsi.dll "$DVMDFSI_PATH"
+          cp -r dvmdfsi/bin/Release/${{ matrix.runtime }}/publish/* "$DVMDFSI_PATH"
+          zip -r dvmdfsi-${{ needs.setup.outputs.VERSION }}-${{ matrix.runtime }}.zip "$DVMDFSI_PATH"
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dvmdfsi-${{ needs.setup.outputs.VERSION }}-${{ matrix.runtime }}
+          path: dvmdfsi-${{ needs.setup.outputs.VERSION }}-${{ matrix.runtime }}.zip
+
+  create-release:
+    name: Create Release
+    needs: [setup, build]
+    runs-on: ubuntu-20.04
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.setup.outputs.VERSION }}
+          name: Release ${{ needs.setup.outputs.VERSION }}
+          draft: false
+          prerelease: false
+
+  upload:
+    name: Upload
+    needs: [setup, build, create-release]
+    strategy:
+      matrix:
+        runtime: [linux-x64, linux-arm64, win-x64]
+    runs-on: ubuntu-20.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dvmdfsi-${{ needs.setup.outputs.VERSION }}-${{ matrix.runtime }}
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: dvmdfsi-${{ needs.setup.outputs.VERSION }}-${{ matrix.runtime }}.zip
+          asset_name: dvmdfsi-${{ needs.setup.outputs.VERSION }}-${{ matrix.runtime }}.zip
+          asset_content_type: application/zip
