@@ -1,6 +1,16 @@
 # Digital Voice Modem FNE IP/DFSI
 
-The Digital Voice Modem FNE IP/DFSI is a helper application designed to allow Rx and Tx of digital audio from/to P25 IP DFSI-compliant servers.
+The Digital Voice Modem FNE IP/DFSI is a helper application designed to allow Rx and Tx of digital audio from/to P25 IP and serial-based DFSI-compliant devices.
+
+## Compatability
+
+### V24 DFSI Devices
+The following devices have been tested to work with the DVM-V24 board:
+* Motorola Quantar
+
+The following devices should be compatible with the DVM-V24 but have not been tested (yet):
+* Motorola AstroTAC 3000
+* Motorola GTR8000 in Quantar Compatability Mode
 
 ## Command Line Parameters
 
