@@ -27,6 +27,7 @@ using System.Reflection;
 using System.Data.SqlTypes;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks.Dataflow;
+using System.Buffers.Binary;
 
 namespace dvmdfsi.DFSI
 {
@@ -334,9 +335,43 @@ namespace dvmdfsi.DFSI
                         break;
                     case DVMModem.CMD_DEBUG1:
                         // extract the debug message
-                        var debugMsg = new byte[length - 3];
-                        Array.Copy(rxBuffer, 3, debugMsg, 0, length - 3);
-                        Log.Logger.Debug($"({Program.Configuration.Name}) V24 Debug Message: {System.Text.Encoding.Default.GetString(debugMsg)})");
+                        Log.Logger.Debug($"({Program.Configuration.Name}) V24 Debug Message: {System.Text.Encoding.Default.GetString(rxBuffer, 3, length - 3)})");
+                        break;
+                    case DVMModem.CMD_DEBUG2:
+                        // Extract param1
+                        Int16 param1 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 2));
+                        // extract the debug message
+                        Log.Logger.Debug($"({Program.Configuration.Name}) V24 Debug Message: {System.Text.Encoding.Default.GetString(rxBuffer, 3, length - 3 - 2)} {param1})");
+                        break;
+                    case DVMModem.CMD_DEBUG3:
+                        // Extract param1
+                        param1 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 4));
+                        // Extract param2
+                        Int16 param2 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 2));
+                        // extract the debug message
+                        Log.Logger.Debug($"({Program.Configuration.Name}) V24 Debug Message: {System.Text.Encoding.Default.GetString(rxBuffer, 3, length - 3 - 4)} {param1} {param2})");
+                        break;
+                    case DVMModem.CMD_DEBUG4:
+                        // Extract param1
+                        param1 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 6));
+                        // Extract param2
+                        param2 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 4));
+                        // Extract param3
+                        Int16 param3 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 2));
+                        // Print
+                        Log.Logger.Debug($"({Program.Configuration.Name}) V24 Debug Message: {System.Text.Encoding.Default.GetString(rxBuffer, 3, length - 3 - 6)} {param1} {param2} {param3})");
+                        break;
+                    case DVMModem.CMD_DEBUG5:
+                        // Extract param1
+                        param1 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 8));
+                        // Extract param2
+                        param2 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 6));
+                        // Extract param3
+                        param3 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 4));
+                        // Extract param4
+                        Int16 param4 = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt16(rxBuffer, length - 2));
+                        // extract the debug message
+                        Log.Logger.Debug($"({Program.Configuration.Name}) V24 Debug Message: {System.Text.Encoding.Default.GetString(rxBuffer, 3, length - 3 - 8)} {param1} {param2} {param3} {param4})");
                         break;
                     default:
                         Log.Logger.Warning($"({Program.Configuration.Name}) got unhandled DVM command from serial: {command}");
