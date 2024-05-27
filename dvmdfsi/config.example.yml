@@ -12,7 +12,6 @@ rawPacketTrace: false
 # Mode
 #   1 - UDP DFSI to DVM FNE
 #   2 - Serial DFSI to DVM FNE
-#   3 - Serial DFSI to UDP DFSI
 mode: 2
 
 # Textual Name
@@ -33,10 +32,12 @@ noConnectionEstablishment: false
 # Flag enabling "the" Manufacturer standard of RTP.
 theManufacturer: false
 
+# Local DFSI Control Port number.
+localControlPort: 27000
 # Local DFSI RTP Port number.
 localRtpPort: 27500
 
-# Remote RFSS DFSI Hostname/IP address of FNE master to connect to.
+# Remote RFSS DFSI Hostname/IP address to connect to.
 remoteDfsiAddress: 127.0.0.2
 # Remote DFSI Control Port number to connect to.
 remoteControlPort: 27000
